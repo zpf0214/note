@@ -1,0 +1,15 @@
+## file not in mermaid (has no struct)
+
+lagrangehalfc_arithmetic.h  has no struct
+lwe-functions.h  has no struct
+numeric_functions.h  has no struct
+polynomials_arithmetic.h  has no struct
+tfhe.h  has no struct
+tfhe_core.h declares only the structures names
+tfhe_garbage_collector.h    declares a small garbage collector used for constant parameters
+tfhe_gate_bootstrapping_functions.h  has no struct
+tfhe_generic_streams.h  declares tools and constants used for Input/Output serialization
+tfhe_generic_templates.h    macros for generic constructors/destructors
+tfhe_io.h   declares the Input/Output functions
+tgsw_functions.h    contains the declaration of TGSW related functions
+tlwe_functions.h    contains the declaration of TLWE related functions
