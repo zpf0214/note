@@ -5,7 +5,12 @@
  * 因为我们不关心中间过程是什么
  */
 
-typedef int32_t Torus32; //avant uint32_t
+typedef Torus32 int32_t; //avant uint32_t
+#define DEGREE 1024
+
+default_random_engine generator;
+uniform_int_distribution<Torus32> uniformTorus32_distrib(INT32_MIN, INT32_MAX);
+uniform_int_distribution<int32_t> uniformInt_distrib(INT_MIN, INT_MAX);
 
 // 计算mod(N,q)上的多项式乘法
 // 这里没有考虑结果溢出，这是非常自然的
