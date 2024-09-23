@@ -8,6 +8,9 @@
 typedef Torus32 int32_t; //avant uint32_t
 #define DEGREE 1024
 
+#include <random>
+extern std::default_random_engine generator;
+extern std::uniform_int_distribution<Torus32> uniformTorus32_distrib;
 default_random_engine generator;
 uniform_int_distribution<Torus32> uniformTorus32_distrib(INT32_MIN, INT32_MAX);
 uniform_int_distribution<int32_t> uniformInt_distrib(INT_MIN, INT_MAX);
