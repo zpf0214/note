@@ -1,14 +1,11 @@
 #include<cassert>
 #include<random>
 #include<iostream>
+#include "torusPolynomialGen.h"
 
 using namespace std;
 
-typedef int32_t Torus32; //avant uint32_t
 #define DEGREE 1024
-
-default_random_engine generator;
-uniform_int_distribution<Torus32> uniformTorus32_distrib(INT32_MIN, INT32_MAX);
 
 void torusPolynomialMultNaive_aux(Torus32* __restrict result, const int32_t* __restrict poly1, const Torus32* __restrict poly2, const int32_t N) {
     Torus32 ri;
@@ -22,21 +19,6 @@ void torusPolynomialMultNaive_aux(Torus32* __restrict result, const int32_t* __r
 			}
 		result[i]=ri;
     }
-}
-
-void randomGenrator(Torus32* result, const int32_t n){
-    for(auto i=0;i<n;i++){
-        result[i] = uniformTorus32_distrib(generator);
-    }
-}
-
-
-void printArray(const Torus32* result, const int32_t n){
-    for(auto i=0; i<n-1; i++){
-        cout<<result[i]<<", ";
-    }
-    cout<<result[n-1];
-    cout<<endl;
 }
 
 int main(){
