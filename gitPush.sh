@@ -1,4 +1,5 @@
-COMMAND=$1
+#COMMAND=$1
+COMMAND="git push origin"
 echo $COMMAND
 
 MAX_RETRIES=10
