@@ -1,10 +1,11 @@
 #COMMAND=$1
-COMMAND="git push origin"
+ACTION=$1
+COMMAND="git $ACTION origin"
 echo $COMMAND
 
 MAX_RETRIES=40
 
-RETRY_INTERVAL=5
+RETRY_INTERVAL=8
 
 retry_count=0
 
