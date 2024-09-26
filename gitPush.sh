@@ -2,7 +2,7 @@
 COMMAND="git push origin"
 echo $COMMAND
 
-MAX_RETRIES=10
+MAX_RETRIES=40
 
 RETRY_INTERVAL=5
 
