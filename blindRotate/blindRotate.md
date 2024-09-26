@@ -2,6 +2,11 @@
 
 In this section, we will explain how to perform blind rotation using TFHE.
 
+## notation
+
+$nearest(x) \coloneqq \lfloor x\rceil$
+根据代码，有$nearest(0.5)=0$。
+
 ## Introduction
 
 我们在给出定义之后，会给出例子，来说明如何使用TFHE进行盲转。
@@ -119,4 +124,53 @@ v_j &= \frac{\lfloor \frac{pj}{2N}\rceil \quad mod \ p}{p} \quad with \ j=0,1,\c
 &= \frac{\lfloor \frac{2j}{N}\rceil \ mod \ 4}{4} \\
 \end{aligned}$$
 
-由以上计算我们发现我们永远无法得到$u$的值，无论$N$取何值。
+由以上计算我们发现$v_j = \{0, \frac{1}{4}, \frac{2}{4}\}.$ 不包含$\frac{3}{4}$。但是考虑到$-\frac{1}{4}=\frac{3}{4}$，所以我们有：
+$$\begin{aligned}
+\{\pm v_0, \cdots, \pm v_{N-1}\} &= \mathbb{T}_4 \\
+\end{aligned}$$
+
+不失一般性，我们选择$N=8$。于是有：
+$$\begin{aligned}
+(\tilde{a}_1,\tilde{a}_2) &= (2, 15) \\
+\tilde{b} &= \lfloor 2Nb \rceil \ mod \ 2N = 14 + \lfloor 16e \rceil \ mod \ 2N \\
+-\tilde{u}^* &= -\tilde{b} + \sum_{j=1}^n \tilde{a}_j\cdot s_j = 3 - \lfloor 16e \rceil \ mod \ 2N \\
+\end{aligned}$$
+
+已知$e \in \frac{1}{32}\mathbb{Z}, \lvert e\rvert < \frac{1}{2p}=\frac{1}{8}$，我们有：
+$$\begin{aligned}
+e &= \{0, \frac{\pm 1}{32}, \frac{\pm 2}{32}, \frac{\pm 3}{32}\} \\
+-\tilde{u}^* &= 3 - \lfloor 16e \rceil \ mod \ 2N = \{5,4,3,2\} \\
+\end{aligned}$$
+
+`test polynomial` $v$：
+$$\begin{aligned}
+v(X) &=  \frac{1}{4}X^3 + \frac{1}{4}X^4 + \frac{1}{4}X^5 + \frac{1}{4}X^6 + \frac{2}{4}X^7 \\
+\end{aligned}$$
+
+可以验证，对于所有$-\tilde{u}^* =3 - \lfloor 16e \rceil \ mod \ 2N = \{5,4,3,2\}$，都可以正确的计算出$u$。
+
+我们可以看到，`Rescaling`操作是如何引入新的误差的。
+
+## BlindRotate
+
+我们有如下定义：
+
+$$\begin{aligned}
+TLWE \ ciphertext \ \mathbf{c} &\leftarrow {TLWE}_{\mathbf{s}}(u) \in \mathbb{T}_q^{n+1} \\
+key \ \mathbf{s} &= (s_1,\cdots,s_n) \in \mathbb{B}^n \\
+bootstrapping-key \ vector \ bsk &= (bsk[1], \cdots, bsk[n]) \\
+bsk[j] &\leftarrow TGGSW_{\mathbf{{\zeta^{\prime}}}}(s_j) \in \mathbf{T}_{N,q}[X]^{(k+1)l\times (k+1)} \ with \ B^l = p\\
+\mathbf{{\zeta^{\prime}}} &= (\zeta^{\prime}_1,\cdots,\zeta^{\prime}_k) \in \mathbb{B}_N[X]^k \\
+v \coloneqq v(X) &= \sum_{j=0}^{N-1} v_j X^j \quad with \ v_j = \frac{\lfloor \frac{pj}{2N}\rceil \ mod \ p}{p} \in \mathbb{T}_p\\
+\end{aligned}$$
+
+我们通过`BlindRotate`得到$TGLWE \ ciphertext \ \mathbf{c'} \leftarrow TGLWE_{\mathbf{\zeta^{\prime}}}(X^{-\bar{u}^*}\cdot v(X)) \in \mathbb{T}_{N,q}[X]^{k+1}$：
+
+1. define $\vec{\mathbf{c}}(X) \coloneqq (0, \cdots, 0, v)$ and $\tilde{\mathbf{c}} \coloneqq (\tilde{a}_1, \cdots, \tilde{a}_n, \tilde{b}) \leftarrow \lfloor \mathbf{c}2N \rceil \ mod \ 2N$;
+2. do $\left\{ \begin{aligned}
+    \mathbf{c}_0^{\prime} & \leftarrow X^{-\tilde{b}} \cdot \vec{\mathbf{c}}(X) \\
+    \mathbf{c}_j^{\prime} & \leftarrow CMux(bsk[j], \mathbf{c}_0^{\prime}, \mathbf{c}_{j-1}^{\prime}, X^{\tilde{a}_j}\cdot \mathbf{c}_{j-1}^{\prime}) \quad for \ j=1,\cdots,n \\
+    \end{aligned} \right.$
+    and  set $\mathbf{c^{\prime}} \coloneqq \mathbf{c}_n^{\prime}$;
+
+我们将`CMux(.)`具体展开，同时注意所需要的乘法运算次数：
