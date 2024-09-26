@@ -67,7 +67,7 @@ u^* &\in \mathbb{T}_q \\
 v_j &\coloneqq \frac{\lfloor (p\bar{u}^*)/q\rceil \quad mod \quad p}{p}\quad ,\quad 0\leq j< q \\
 \end{aligned}$$
 
-其中$v_j$表示多项式$v(X)=v_0+v_1X+v_2X^2+\cdots+v_{N-1}X^{N-1} \in \mathbb{T}_{N,p}[X]=\mathbb{T}_p[X]/(X^N+1)$的第$j$个系数。
+其中$v_j$表示多项式`test polynomial`$v(X)=v_0+v_1X+v_2X^2+\cdots+v_{N-1}X^{N-1} \in \mathbb{T}_{N,p}[X]=\mathbb{T}_p[X]/(X^N+1)$的第$j$个系数。
 
 根据多项式环的外积性质$X^{-j}\cdot v(X)=v_j+\cdots,0\leq j<N$，我们有：
 
@@ -81,7 +81,7 @@ X^{-\bar{u}^*}\cdot v(X) &= \frac{\lfloor (p\bar{u}^*)/q\rceil \quad mod \quad p
 
 以上假设$N \geq q$在实际应用中并不满足。在实际中，$N$可能远远小于$q$。
 
-考虑到$X^{2N}=1$, 我们有$X^{-\bar{u}^*}\cdot v(X)$中的$-\bar{u}^*$定义在模`2N`中的元素。
+考虑到$X^{2N}=1$, 我们有$X^{-\bar{u}^*}\cdot v(X)$中的$-\bar{u}^*$是定义在模`2N`中的元素。
 
 因此，我们需要对$\bar{u}^*$进行`Rescaling`操作。
 
@@ -99,12 +99,24 @@ $$\begin{aligned}
 -\tilde{u}^* = -\tilde{b} + \sum_{j=1}^n \tilde{a}_j\cdot s_j \quad (mod \quad 2N) \\
 \end{aligned}$$
 
-其中$\tilde{a}_j=\lfloor 2N\bar{a}_j\rceil \quad mod \quad 2N$，$\tilde{b}=\lfloor 2N\bar{b}\rceil \quad mod \quad 2N$。
+其中$\tilde{a}_j=\lfloor 2N{a}_j\rceil \ mod \ 2N$，$\tilde{b}=\lfloor 2N{b}\rceil \ mod \ 2N$。
 
-> 注意：论文中这里公式给错了,应该是上述公式。
-> 没有给错，这里需要仔细想想
+`test polynomial`$v$的系数$\{v_j\}$可以由`Rescaling`公式计算得到:
 
-> 为了控制误差，我们必须小心的
-> 选择N，使得误差仍然在可接受的范围内。
+$$\begin{aligned}
+v \coloneqq v(X) = \sum_{j=0}^{N-1} v_j X^j \quad with \ v_j = \frac{\lfloor \frac{pj}{2N}\rceil \ mod \ p}{p} \in \mathbb{T}_p\\
+\end{aligned}$$
+
+> 为了控制误差，我们必须小心的选择N，使得误差仍然在可接受的范围内。
 
 #### Example
+
+仍然使用之前的例子，假设$p=4,q=32,n=2$。计算新的`test polynomial v`的系数。
+
+$$\begin{aligned}
+v_j &= \frac{\lfloor \frac{pj}{2N}\rceil \quad mod \ p}{p} \quad with \ j=0,1,\cdots ,N-1 \\
+&= \frac{\lfloor \frac{4\cdot j}{2\cdot N}\rceil \ mod \ 4}{4} \\
+&= \frac{\lfloor \frac{2j}{N}\rceil \ mod \ 4}{4} \\
+\end{aligned}$$
+
+由以上计算我们发现我们永远无法得到$u$的值，无论$N$取何值。
