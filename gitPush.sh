@@ -1,3 +1,4 @@
+#!/usr/bin/bash
 #COMMAND=$1
 ACTION=$1
 COMMAND="git $ACTION origin"

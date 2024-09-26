@@ -159,7 +159,7 @@ $$\begin{aligned}
 TLWE \ ciphertext \ \mathbf{c} &\leftarrow {TLWE}_{\mathbf{s}}(u) \in \mathbb{T}_q^{n+1} \\
 key \ \mathbf{s} &= (s_1,\cdots,s_n) \in \mathbb{B}^n \\
 bootstrapping-key \ vector \ bsk &= (bsk[1], \cdots, bsk[n]) \\
-bsk[j] &\leftarrow TGGSW_{\mathbf{{\zeta^{\prime}}}}(s_j) \in \mathbf{T}_{N,q}[X]^{(k+1)l\times (k+1)} \ with \ B^l = p\\
+bsk[j] &\leftarrow TGGSW_{\mathbf{{\zeta^{\prime}}}}(s_j) \in \mathbb{T}_{N,q}[X]^{(k+1)l\times (k+1)} \ with \ B^l = p\\
 \mathbf{{\zeta^{\prime}}} &= (\zeta^{\prime}_1,\cdots,\zeta^{\prime}_k) \in \mathbb{B}_N[X]^k \\
 v \coloneqq v(X) &= \sum_{j=0}^{N-1} v_j X^j \quad with \ v_j = \frac{\lfloor \frac{pj}{2N}\rceil \ mod \ p}{p} \in \mathbb{T}_p\\
 \end{aligned}$$
@@ -169,8 +169,24 @@ v \coloneqq v(X) &= \sum_{j=0}^{N-1} v_j X^j \quad with \ v_j = \frac{\lfloor \f
 1. define $\vec{\mathbf{c}}(X) \coloneqq (0, \cdots, 0, v)$ and $\tilde{\mathbf{c}} \coloneqq (\tilde{a}_1, \cdots, \tilde{a}_n, \tilde{b}) \leftarrow \lfloor \mathbf{c}2N \rceil \ mod \ 2N$;
 2. do $\left\{ \begin{aligned}
     \mathbf{c}_0^{\prime} & \leftarrow X^{-\tilde{b}} \cdot \vec{\mathbf{c}}(X) \\
-    \mathbf{c}_j^{\prime} & \leftarrow CMux(bsk[j], \mathbf{c}_0^{\prime}, \mathbf{c}_{j-1}^{\prime}, X^{\tilde{a}_j}\cdot \mathbf{c}_{j-1}^{\prime}) \quad for \ j=1,\cdots,n \\
+    \mathbf{c}_j^{\prime} & \leftarrow CMux(bsk[j], \mathbf{c}_{j-1}^{\prime}, X^{\tilde{a}_j}\cdot \mathbf{c}_{j-1}^{\prime}) \quad for \ j=1,\cdots,n \\
     \end{aligned} \right.$
     and  set $\mathbf{c^{\prime}} \coloneqq \mathbf{c}_n^{\prime}$;
 
 我们将`CMux(.)`具体展开，同时注意所需要的乘法运算次数：
+
+$$\begin{aligned}
+CMux(bsk[j],  \mathbf{c}_{j-1}^{\prime}, X^{\tilde{a}_j}\cdot \mathbf{c}_{j-1}^{\prime}) &\leftarrow bsk[j] \boxdot (X^{\tilde{a}_j}\cdot \mathbf{c}_{j-1}^{\prime} - \mathbf{c}_{j-1}^{\prime}) + \mathbf{c}_{j-1}^{\prime} \\
+&\leftarrow bsk[j] \boxdot (X^{\tilde{a}_j} - 1)\mathbf{c}_{j-1}^{\prime} + \mathbf{c}_{j-1}^{\prime} \\
+&=G^{-1}((X^{\tilde{a}_j} - 1)\mathbf{c}_{j-1}^{\prime}) \cdot  bsk[j] +  \mathbf{c}_{j-1}^{\prime} \\
+\end{aligned}$$
+
+我们假设$G^{-1}((X^{\tilde{a}_j} - 1)\mathbf{c}_{j-1}^{\prime})$需要的乘法运算次数为$o(G)$。
+
+$$\begin{aligned}
+G^{-1}((X^{\tilde{a}_j} - 1)\mathbf{c}_{j-1}^{\prime}) \cdot  bsk[j] \leftarrow \mathbb{Z}_{N}[X]^{(k+1)l} \times \mathbb{T}_{N,q}[X]^{(k+1)l\times (k+1)}
+\end{aligned}$$
+
+### Example
+
+仍然使用之前的例子，假设 $p=4,q=32,n=2,N=8,B=2,l=2,k=1$。
