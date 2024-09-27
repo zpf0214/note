@@ -190,3 +190,64 @@ G^{-1}((X^{\tilde{a}_j} - 1)\mathbf{c}_{j-1}^{\prime}) \cdot  bsk[j] \leftarrow 
 ### Example
 
 仍然使用之前的例子，假设 $p=4,q=32,n=2,N=8,B=2,l=2,k=1$。
+
+$$\begin{aligned}
+\vec{\mathbf{c}}(X) &\coloneqq (0, v) \\
+&\quad v \coloneqq v(X) =  \frac{1}{4}X^3 + \frac{1}{4}X^4 + \frac{1}{4}X^5 + \frac{1}{4}X^6 + \frac{2}{4}X^7 \\
+\tilde{\mathbf{c}} &\coloneqq (\tilde{a}_1, \cdots, \tilde{a}_n, \tilde{b}) \leftarrow \lfloor \mathbf{c}2N \rceil \ mod \ 2N \\
+&= (2, 15, 14 + \lfloor 16e \rceil ) \ mod \ 2N\\
+\end{aligned}$$
+
+计算$bootstrapping-key \ vector \ bsk$：
+
+$$\begin{aligned}
+\mathbf{g}^\top &= (1/2, 1/4)^\top\\
+\mathbf{G}^{\top} &= \mathbf{I}_{\mathbf{k+1}} \otimes \mathbf{g}^\top \\
+\mathbf{{\zeta^{\prime}}} &= (\zeta^{\prime}_1,\cdots,\zeta^{\prime}_k) \in \mathbb{B}_N[X]^k =(\zeta^{\prime}_1) \\
+&=(1+X+X^2+X^3+X^4+X^5+X^6+X^7) \\
+TGLWE_{\mathbf{\zeta^{\prime}}}(0) &=(\vec{a}_1(X), \vec{l}(X)) \ with \ \vec{a}_1(X) = \frac{3}{4}X^5 \\
+&= (\frac{3}{4}X^5, \vec{l}(X)) \\
+\vec{l}_i(X) &= \frac{-3}{4}+\frac{-3}{4}X+\frac{-3}{4}X^2+\frac{-3}{4}X^3+\frac{-3}{4}X^4 \\
+&\qquad +\frac{3}{4}X^5+\frac{3}{4}X^6+\frac{3}{4}X^7\\
+&\qquad + \mathbf{e_i}(X) \\
+bsk[j] &\leftarrow TGGSW_{\mathbf{{\zeta^{\prime}}}}(s_j) \in \mathbb{T}_{N,q}[X]^{(k+1)l\times (k+1)} \ with \ B^l = p\\
+&bsk[i] = \begin{pmatrix}
+\frac{1}{2} + \frac{3}{4}X^5 & \vec{l}_i(X)  \\
+\frac{1}{4} + \frac{3}{4}X^5 & \vec{l}_i(X)  \\
+\frac{3}{4}X^5 & \frac{1}{2} +\vec{l}_i(X)  \\
+\frac{3}{4}X^5 & \frac{1}{4} +\vec{l}_i(X)  
+\end{pmatrix}_{4\times 2}
+ \\
+bsk &= (bsk[1], bsk[2]) \in \mathbb{T}_{N=8,q=32}[X]^{4\times 2 \times 2} \\
+\end{aligned}$$
+
+详细展开step2：
+
+$$\begin{aligned}
+\mathbf{c}_0^{\prime} & \leftarrow X^{-\tilde{b}} \cdot \vec{\mathbf{c}}(X) \\
+&=(0, \frac{1}{4}X^{5-\lfloor 16e \rceil}(1+X+X^2+X^3+2X^4)) \\
+&=(0, v_0(X)) \\
+&\qquad v_0(X) = \frac{1}{4}X^{5-\lfloor 16e \rceil}(1+X+X^2+X^3+2X^4) \\
+\mathbf{c}_1^{\prime} & \leftarrow CMux(bsk[1], \mathbf{c}_{1-1}^{\prime}, X^{\tilde{a}_1}\cdot \mathbf{c}_{1-1}^{\prime}) \\
+&=G^{-1}((X^{\tilde{a}_1} - 1)\mathbf{c}_{0}^{\prime}) \cdot  bsk[1] +  \mathbf{c}_{0}^{\prime} \\
+&=G^{-1}((X^{2} - 1)\mathbf{c}_{0}^{\prime}) \cdot  bsk[1] +  \mathbf{c}_{0}^{\prime} \\
+&=(0,0,0,v_1(X)) \cdot  bsk[1] +  \mathbf{c}_{0}^{\prime} \\
+&\qquad (v_1(X) = X^{5-\lfloor 16e \rceil}(X^2-1)(1+X+X^2+X^3+2X^4))\\
+&\qquad (v_1(X) = 4(X^2-1)v_0(X)) \\
+&= (\frac{3}{4}X^5\cdot v_1(X),(\frac{1}{4} +\vec{l}_1(X))\cdot v_1(X))+  \mathbf{c}_{0}^{\prime} \\
+&= (3X^5(X^2-1)\cdot v_0(X),(1 +4\vec{l}_1(X))(X^2-1)\cdot v_0(X))+  \mathbf{c}_{0}^{\prime} \\
+&= (3X^5(X^2-1)\cdot v_0(X),((1 +4\vec{l}_1)(X^2-1)+1)\cdot v_0(X)) \\
+&= (p_1(X)\cdot v_0(X),q_1(X)\cdot v_0(X)) \\
+&= (p_1\cdot v_0,q_1\cdot v_0) \\
+\mathbf{c}_2^{\prime} & \leftarrow CMux(bsk[2], \mathbf{c}_{2-1}^{\prime}, X^{\tilde{a}_2}\cdot \mathbf{c}_{2-1}^{\prime}) \\
+&=G^{-1}((X^{\tilde{a}_2} - 1)\mathbf{c}_{1}^{\prime}) \cdot  bsk[2] +  \mathbf{c}_{1}^{\prime} \\
+&=G^{-1}((X^{15} - 1)\mathbf{c}_{1}^{\prime}) \cdot  bsk[2] +  \mathbf{c}_{1}^{\prime} \\
+&=G^{-1}((-X^{7} - 1)\mathbf{c}_{1}^{\prime}) \cdot  bsk[2] +  \mathbf{c}_{1}^{\prime} \\
+&=4(-X^{7} - 1) \cdot v_0 \cdot (0, p_1 , 0,q_1)\cdot  bsk[2] +  \mathbf{c}_{1}^{\prime} \\
+&=4(-X^{7} - 1) \cdot (\frac{1}{4}(+3X^5)p_1 + \frac{3}{4}X^5q_1, \frac{1}{4}q_1 + p_1 \vec{l}_2 + q_1 \vec{l}_2) +  \mathbf{c}_{1}^{\prime} \\
+\mathbf{c^{\prime}} &\coloneqq \mathbf{c}_2^{\prime}
+\end{aligned}$$
+
+已知$TGLWE \ ciphertext \ \mathbf{c'} \leftarrow TGLWE_{\mathbf{\zeta^{\prime}}}(X^{-\bar{u}^*}\cdot v(X)) = TGLWE_{\mathbf{\zeta^{\prime}}}(u + \cdots) \in \mathbb{T}_{N,q}[X]^{k+1}$. 这里如果我们进行`decrypt`操作，理论上是可以获得$u$的。
+
+> 以上的计算量过大，而且也没能够体现出需要的乘法次数。
