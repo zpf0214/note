@@ -43,3 +43,23 @@ Return
 ^4::
     Send {U+0024}
 return
+
+; 在vim中输出会有不同，可能需要进一步了解AutoHotkey，
+; 让其在指定的窗口做指定的动作
+; markdown latex 环境符号转换
+![:: ; Alt + [ 输出\(\),同时光标位于括号内部 
+    Send, {U+005C}{U+0028}{U+005C}{U+0029}
+    Send, {Left}
+    Send, {Left}
+Return
+
+!]:: ; Alt + ] 输出\[\]
+    begin := "\begin{{}aligned{}}"
+    end := "\end{{}aligned{}}"
+    Send, {U+005C}[%begin%
+    Send, {Enter}
+    Send, {Enter}
+    Send, %end%{U+005C}]
+    Send, {Up}
+Return
+
