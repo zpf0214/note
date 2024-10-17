@@ -56,7 +56,8 @@ Return
 !]:: ; Alt + ] 输出\[\]
     begin := "\begin{{}aligned{}}"
     end := "\end{{}aligned{}}"
-    Send, {U+005C}[%begin%
+    Send, {U+005C}[
+    Send, %begin%
     Send, {Enter}
     Send, {Enter}
     Send, %end%{U+005C}]
