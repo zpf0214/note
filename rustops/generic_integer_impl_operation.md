@@ -474,3 +474,125 @@ expand_pub_use_fhe_type!(
 这个宏定义特别长，但是感觉应该也不是定义的地方，这个宏可以单独拿出来仔细分析一下。
 
 > 2024年11月5日，这个`FheInt16`好难找啊，还是没有找到
+
+#### 再回到`src/high_level_api/mod.rs`
+
+```rust
+expand_pub_use_fhe_type!(
+    pub use crate::high_level_api::integers{
+        FheUint2, FheUint4, FheUint6, FheUint8, FheUint10, FheUint12, FheUint14, FheUint16,
+        FheUint32, FheUint64, FheUint128, FheUint160, FheUint256, FheUint512, FheUint1024, FheUint2048,
+
+        FheInt2, FheInt4, FheInt6, FheInt8, FheInt10, FheInt12, FheInt14, FheInt16,
+        FheInt32, FheInt64, FheInt128, FheInt160, FheInt256
+    };
+);
+```
+
+上面做的是路径导出，既然是路径导出，那么导出的值就应该是在该路径下定义的才对也就是`crate::high_level_api::integers`中。
+
+`src/high_level_api/integers/mod.rs`:
+
+```rust
+expand_pub_use_fhe_type!(
+    pub use signed{
+        FheInt2, FheInt4, FheInt6, FheInt8, FheInt10, FheInt12, FheInt14, FheInt16,
+        FheInt32, FheInt64, FheInt128, FheInt160, FheInt256
+    };
+);
+
+```
+
+仍然是利用宏在做路径导出，那么同上，应该定义在该路径`pub use signed`中。
+
+`src/high_level_api/integers/signed/mod.rs`:
+
+```rust
+expand_pub_use_fhe_type!(
+    pub use static_{
+        FheInt2, FheInt4, FheInt6, FheInt8, FheInt10, FheInt12, FheInt14, FheInt16,
+        FheInt32, FheInt64, FheInt128, FheInt160, FheInt256
+    };
+);
+```
+
+仍然是宏做路径导出，同上.
+
+`src/high_level_api/integers/signed/static_.rs` 这里我们终于找到FheInt16等的定义了，仍然是利用宏做出的定义，所以会比较难找。代码比较长，不再粘贴到这里。
+
+#### 总结
+
+我们找到了`FheInt16`的实现，由于其是利用宏定义的，所以比较难找。宏生成的代码如下(以2位整数举例):
+
+```rust
+#[doc = "Id for the [FheInt2] data type."]
+#[derive(Copy, Clone, Debug, Default, Serialize, Deserialize, NotVersioned)]
+pub struct FheInt2Id;
+
+impl IntegerId for FheInt2Id {
+    fn num_bits() -> usize {
+        2
+    }
+}
+
+impl FheId for FheInt2Id { }
+impl FheIntId for FheInt2Id { }
+
+#[doc = "A signed integer type with 2 bits"]
+#[doc = ""]
+#[doc = "See [FheInt]"]
+#[cfg_attr(all(doc, not(doctest)), cfg(feature = "integer"))]
+pub type FheInt2 = FheInt<FheInt2Id>;
+
+#[doc = "A compressed signed integer type with 2 bits"]
+#[cfg_attr(all(doc, not(doctest)), cfg(feature = "integer"))]
+pub type CompressedFheInt2 = CompressedFheInt<FheInt2Id>;
+
+#[cfg_attr(all(doc, not(doctest)), cfg(feature = "integer"))]
+pub type FheInt2ConformanceParams = FheIntConformanceParams<FheInt2Id>;
+```
+
+如果想要进一步的了解，那么还得进一步了解`FheId、FheIntId、FheIntConformanceParams`等。
+
+### `encrypt()`
+
+```rust
+#[cfg_attr(all(doc, not(doctest)), doc(cfg(feature = "integer")))]
+#[derive(Clone, serde::Deserialize, serde::Serialize, Versionize)]
+#[versionize(FheIntVersions)]
+pub struct FheInt<Id: FheIntId> {
+    pub(in crate::high_level_api) ciphertext: RadixCiphertext,
+    pub(in crate::high_level_api) id: Id,
+    pub(crate) tag: Tag,
+}
+```
+
+`FheInt`定义在`src/high_level_api/integers/signed/base.rs`中，但是这里没有相应的`encrypt`的实现，那么我们其实还是要去看看`FheInt`是如何与`encrypt`函数建立联系的。
+
+#### `src/high_level_api/traits.rs`
+
+grep之后发现符合调用方法的`encrypt`只位于： `src/high_level_api/traits.rs`
+
+```rust
+pub trait FheEncrypt<T, Key> {
+    fn encrypt(value: T, key: &Key) -> Self;
+}
+
+impl<Clear, Key, T> FheEncrypt<Clear, Key> for T
+where
+    T: FheTryEncrypt<Clear, Key>,
+{
+    fn encrypt(value: Clear, key: &Key) -> Self {
+        T::try_encrypt(value, key).unwrap()
+    }
+}
+```
+
+这种泛型定义方式确实挺令人困惑的，对于`FheEncrypt`这个`trait`，并不需要将`T`具现化，所有实现了`FheTryEncrypt`的类型都会自动获得`FheEncrypt`这个`trait`。所以我们只需要去看`FheInt16`是否实现了`FheTryEncrypt`就行。
+
+`FheInt16 = FheInt<FheInt16Id>` 所以我们需要去看`FheInt`是否实现了`FheTryEncrypt`。
+
+> 2024年11月6日，得加快一下进度了，关于加密的具体实现就略过吧，我们现在已经知道整个代码是如何组织的了，略过一些细节也没啥问题
+> 那么我们现在需要的就是直接去看`programmable bootstrap`在rust中是如何实现的
+
+
