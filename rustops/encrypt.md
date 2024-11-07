@@ -530,3 +530,12 @@ impl ShortintEngine {
 }
 ```
 
+### 总结
+
+`FheInt16::encrypt(23i16, &client_key)` 加密过程如下：
+
+- 将`23i16`分解为`8`个`2bit`的`block`，即`[00, 00, 00, 00, 00, 01, 01, 11]`
+- 调用`encrypt_words_radix_impl`加密每个`block`，得到`8`个`block`的`ciphertext`
+- 调用`Ciphertext::new`构造最终的`ciphertext`，其中`message_modulus`为`4`，`carry_modulus`为`4`
+- 返回最终的`ciphertext`是一个`Vec<Vec<u64>>`
+
