@@ -539,3 +539,8 @@ impl ShortintEngine {
 - 调用`Ciphertext::new`构造最终的`ciphertext`，其中`message_modulus`为`4`，`carry_modulus`为`4`
 - 返回最终的`ciphertext`是一个`Vec<Vec<u64>>`
 
+这种情况下如何做运算，比如`+`如何计算？
+
+- `plaintext`大小是多少？这里就是`2bits`？
+- 因为是一个`Torus`，进位又是如何表示？
+
