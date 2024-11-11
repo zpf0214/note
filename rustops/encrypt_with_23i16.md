@@ -59,3 +59,32 @@ decomposer = BlockDecomposer::new(message, bits_in_block);
                }
 ```
 
+我们写了一段代码验证以上讨论：
+```rust
+use tfhe::integer::block_decomposition::BlockDecomposer;
+//use tfhe::prelude::*;
+//use tfhe::{generate_keys, set_server_key, ConfigBuilder, FheInt16};
+
+fn main() {
+    let message = 23i16;
+    let bits_in_block = 2;
+    let num_blocks = 8;
+
+    let decomposer = BlockDecomposer::new(message, bits_in_block);
+
+    let clear_block_iterator = decomposer
+        .iter_as::<u64>()
+        .chain(std::iter::repeat(0u64))
+        .take(num_blocks);
+
+    let blocks = clear_block_iterator.collect::<Vec<_>>();
+
+    println!("{:?}", blocks);
+}
+```
+以上代码显示：
+```rust
+[3, 1, 1, 0, 0, 0, 0, 0]
+```
+与我们预期一致
+
