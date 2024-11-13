@@ -127,7 +127,8 @@ bindkey "^E" autosuggest-execute
 
 # Start SSH agent and add private key
 if [ -z "$SSH_AUTH_SOCK" ]; then
-    eval "$(ssh-agent -s)"
-    ssh-add /root/.ssh/id_ed25519
+    sshKey = ~/.ssh/id_ed25519
+    eval "$(ssh-agent -s)" &> /dev/null
+    [ -e $sshKey ] && ssh-add $sshKey &> /dev/null || echo "$sshKey  not exist"
 fi
 
