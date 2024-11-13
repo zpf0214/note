@@ -124,3 +124,10 @@ bindkey "^E" autosuggest-execute
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 [ -f "/home/superarc_zpf/.ghcup/env" ] && . "/home/superarc_zpf/.ghcup/env" # ghcup-env
+
+# Start SSH agent and add private key
+if [ -z "$SSH_AUTH_SOCK" ]; then
+    eval "$(ssh-agent -s)"
+    ssh-add /root/.ssh/id_ed25519
+fi
+

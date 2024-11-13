@@ -5,6 +5,9 @@
 
 using namespace std;
 
+template<typename T>
+using LookupTable = std::unordered_map<T, T>;
+
 typedef int32_t Torus32;
 
 struct TorusPolynomial {
@@ -47,8 +50,8 @@ int32_t pow(int32_t n, int32_t Msize){
 }
 //fake map，创建正确/错误的unordered_map
 //返回指针的话会有生命周期的问题
-std::unordered_map<int, int> generatePBSTableFake(int32_t Msize, bool flag){
-    std::unordered_map<int, int> pbs_table;
+LookupTable<int32_t> generatePBSTableFake(int32_t Msize, bool flag){
+    LookupTable<int32_t> pbs_table;
     if (flag){
         for(auto i=0; i<Msize; i++){
             pbs_table[i] = pow(i, Msize);
@@ -69,15 +72,24 @@ std::unordered_map<int, int> generatePBSTableFake(int32_t Msize, bool flag){
 //传入的dict需要预先校验正确性
 //1. 所有Tp值都要被包含，key，value有且只能有Tp中的值
 //2. key的数量只能是Tp，同时要考虑用户的输入可能是从负值开始
-//void validatePBSTableInRange(std::unordered_map<int, int> *pbs_table, int32_t Msize)
-//void testPolynomialGenWitPBSTable(TorusPolynomial *testpoly, int32_t N, int32_t Msize, )
+void validatePBSTableInRange(LookupTable<int> *pbs_table, int32_t Msize);
+
+void testPolynomialGenWitPBSTable(TorusPolynomial *testpoly, int32_t N, int32_t Msize, LookupTable<int32_t> pbs_table){
+    for(auto i=0; i<N; i++){
+        int32_t polynomial_elem = static_cast<int32_t>(double(i) * Msize / (N*2) + 0.5);
+        int32_t pbs_poly_elem = pbs_table[polynomial_elem];
+        testpoly->coefsT[i] = modSwitchToTorus32(pbs_poly_elem, Msize);
+    }
+}
 
 int main() {
     int32_t N = 8;
     int32_t Msize = 4;
 
     TorusPolynomial *testpoly = new TorusPolynomial(N);
-    testPolynomialGen(testpoly, N, Msize);
+    LookupTable<int32_t> pbs_table = generatePBSTableFake(Msize, true);
+    testPolynomialGenWitPBSTable(testpoly, N, Msize, pbs_table);
+    //testPolynomialGen(testpoly, N, Msize);
     for(auto i=0; i<N; i++){
         cout << testpoly->coefsT[i] << " ";
         cout << " after mod to int32_t ";
