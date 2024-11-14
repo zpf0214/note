@@ -1,5 +1,6 @@
 # `ops::Add`
 
+`src/high_level_api/integers/signed/ops.rs`
 ```rust
     /// let (client_key, server_key) = generate_keys(ConfigBuilder::default());
     /// set_server_key(server_key);
@@ -591,7 +592,6 @@ impl ServerKey {
     ///
     /// # Example
     ///
-    /// ```rust
     /// use tfhe::shortint::gen_keys;
     /// use tfhe::shortint::parameters::PARAM_MESSAGE_2_CARRY_2_KS_PBS;
     ///
@@ -610,7 +610,6 @@ impl ServerKey {
     /// let dec = cks.decrypt(&ct_res);
     /// // 3**2 mod 4 = 1
     /// assert_eq!(dec, f(msg));
-    /// ```
     pub fn generate_lookup_table<F>(&self, f: F) -> LookupTableOwned
     where
         F: Fn(u64) -> u64,

@@ -1,4 +1,4 @@
-# generic_integer_impl_operation
+# `generic_integer_impl_operation`
 
 这个宏用于实现泛型整数的操作。重载了运算符，使得密文运算可以通过宏直接生成。
 
@@ -14,7 +14,6 @@ generic_integer_impl_operation!(
     ///
     /// # Example
     ///
-    /// ```rust
     /// use tfhe::prelude::*;
     /// use tfhe::{generate_keys, set_server_key, ConfigBuilder, FheInt16};
     ///
@@ -27,7 +26,6 @@ generic_integer_impl_operation!(
     /// let result = &a + &b;
     /// let result: i16 = result.decrypt(&client_key);
     /// assert_eq!(result, 23i16 + 3i16);
-    /// ```
     rust_trait: Add(add),
     implem: {
         |lhs: &FheInt<_>, rhs: &FheInt<_>| {
@@ -67,12 +65,10 @@ generic_integer_impl_operation!(
 ///
 /// # Example
 ///
-/// ```rust
 /// use tfhe::{generate_keys, ConfigBuilder};
 ///
 /// let config = ConfigBuilder::default().build();
 /// let (client_key, server_key) = generate_keys(config);
-/// ```
 pub fn generate_keys<C: Into<Config>>(config: C) -> (ClientKey, ServerKey) {
     let client_kc = ClientKey::generate(config);
     let server_kc = client_kc.generate_server_key();
@@ -375,7 +371,6 @@ thread_local! {
 ///
 /// Only working in the `main` thread
 ///
-/// ```rust
 /// use tfhe::{generate_keys, ConfigBuilder};
 ///
 /// let config = ConfigBuilder::default().build();
@@ -383,12 +378,10 @@ thread_local! {
 ///
 /// tfhe::set_server_key(server_key);
 /// // Now we can do operations on homomorphic types
-/// ```
 ///
 ///
 /// Working with multiple threads
 ///
-/// ```rust
 /// use std::thread;
 /// use tfhe::ConfigBuilder;
 ///
@@ -408,7 +401,6 @@ thread_local! {
 ///
 /// th2.join().unwrap();
 /// th1.join().unwrap();
-/// ```
 pub fn set_server_key<T: Into<InternalServerKey>>(keys: T) {
     INTERNAL_KEYS.with(|internal_keys| internal_keys.replace_with(|_old| Some(keys.into())));
 }
@@ -416,7 +408,7 @@ pub fn set_server_key<T: Into<InternalServerKey>>(keys: T) {
 
 ### 小结
 
-这个函数 set_server_key 的作用是将传入的 keys 设置为线程局部静态变量 INTERNAL_KEYS 的值。
+这个函数 `set_server_key` 的作用是将传入的 keys 设置为线程局部静态变量 `INTERNAL_KEYS` 的值。
 
 
 ## `let a = FheInt16::encrypt(23i16, &client_key);`

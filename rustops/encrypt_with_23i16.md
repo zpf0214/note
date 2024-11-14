@@ -1,5 +1,7 @@
 # `FheInt16::encrypt(23i16, &client_key)`
 
+where is `public random mask (a0,a1, ..., an)`?
+
 `src/high_level_api/integers/signed/ops.rs`
 ```rust
     /// use tfhe::prelude::*;
