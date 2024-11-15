@@ -84,7 +84,7 @@ struct TLweParams {
 
 /** This structure represents an integer polynomial modulo X^N+1 */
 struct IntPolynomial {
-   const int32_t N;
+   const int32_t N; //derived from TLweParams, not independent
    int32_t* coefs;
 
 #ifdef __cplusplus   
@@ -159,3 +159,14 @@ pub const PARAM_MESSAGE_2_CARRY_2_KS_PBS_GAUSSIAN_2M64: ClassicPBSParameters =
         encryption_key_choice: EncryptionKeyChoice::Big,
     };
 ```
+
+## Summary
+
+根据以上讨论，我们知道以下内容需要在一开始就初始化
+- `LweParams`
+- `TLweParams`
+- `TGswParams`
+- `IntPolynomial`
+- `TorusPolynomial`
+
+`IntPolynomial` 和 `TorusPolynomial` 的区别在哪里？什么时候需要？
