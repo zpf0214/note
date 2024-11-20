@@ -77,6 +77,7 @@ where
             .key
             .key
             .encrypt_signed_radix(value, Id::num_blocks(key.message_modulus()));
+            // zpf 如果我们想知道degree的设置，那么还是得看这里的细节
         Ok(Self::new(ciphertext, key.tag.clone()))
     }
 }
@@ -376,6 +377,8 @@ where
     let blocks = clear_block_iterator
         .map(|clear_block| encrypt_block(encrypting_key, clear_block))
         .collect::<Vec<_>>();
+        // 这里是否使用了不同的`random vector`？
+        // zpf 这里如何设置 degree ？
 
     RadixCiphertextType::from(blocks)
 }
@@ -503,6 +506,7 @@ impl ShortintEngine {
 
         let (encryption_lwe_sk, encryption_noise_distribution) =
             client_key.encryption_key_and_noise();
+            // zpf 对于3 和 1 ，noise是否相同？
 
         let ct = self.encrypt_inner_ct(
             &client_key.parameters,
@@ -519,16 +523,127 @@ impl ShortintEngine {
             / message_modulus.0;
 
         Ciphertext::new(
-            ct,
-            Degree::new(message_modulus.0 - 1),
+            ct, //zpf LweCiphertextOwned<u64>
+            Degree::new(message_modulus.0 - 1), //zpf 3
             NoiseLevel::NOMINAL,
             message_modulus,
             CarryModulus(carry_modulus),
             params_op_order,
         )
     }
+
+    fn encrypt_inner_ct<KeyCont, NoiseDistribution>(
+        &mut self,
+        client_key_parameters: &ShortintParameterSet,
+        client_lwe_sk: &LweSecretKey<KeyCont>,
+        noise_distribution: NoiseDistribution,
+        message: u64, //zpf 3
+        message_modulus: MessageModulus,
+    ) -> LweCiphertextOwned<u64>
+    where
+        NoiseDistribution: Distribution,
+        u64: RandomGenerable<NoiseDistribution, CustomModulus = u64>,
+        KeyCont: crate::core_crypto::commons::traits::Container<Element = u64>,
+    {
+        //The delta is the one defined by the parameters
+        let delta = (1_u64 << 63)
+            / (client_key_parameters.message_modulus().0 * client_key_parameters.carry_modulus().0)
+                as u64;
+                //zpf: (1_u64 << 63)/(4*4)
+
+        //The input is reduced modulus the message_modulus
+        let m = message % message_modulus.0 as u64;
+
+        let shifted_message = m * delta; // 3 * 2^63 / 2^4
+
+        let encoded = Plaintext(shifted_message);
+
+        allocate_and_encrypt_new_lwe_ciphertext(
+            client_lwe_sk,
+            encoded,
+            noise_distribution,
+            client_key_parameters.ciphertext_modulus(),
+            &mut self.encryption_generator,
+        )
+    }
 }
 ```
+
+`Plaintext`
+`src/core_crypto/entities/plaintext.rs`
+```rust
+pub struct Plaintext<T: Numeric>(pub T);
+```
+
+`allocate_and_encrypt_new_lwe_ciphertext`
+`src/core_crypto/algorithms/lwe_encryption.rs`
+```rust
+pub fn allocate_and_encrypt_new_lwe_ciphertext<Scalar, NoiseDistribution, KeyCont, Gen>(
+    lwe_secret_key: &LweSecretKey<KeyCont>,
+    encoded: Plaintext<Scalar>, //zpf 3 * 2^59
+    noise_distribution: NoiseDistribution,
+    ciphertext_modulus: CiphertextModulus<Scalar>,
+    generator: &mut EncryptionRandomGenerator<Gen>,
+) -> LweCiphertextOwned<Scalar>
+where
+    Scalar: Encryptable<Uniform, NoiseDistribution>,
+    NoiseDistribution: Distribution,
+    KeyCont: Container<Element = Scalar>,
+    Gen: ByteRandomGenerator,
+{
+    let mut new_ct = LweCiphertextOwned::new(
+        Scalar::ZERO,
+        lwe_secret_key.lwe_dimension().to_lwe_size(),
+        ciphertext_modulus,
+    );
+
+    encrypt_lwe_ciphertext(
+        lwe_secret_key,
+        &mut new_ct,
+        encoded,
+        noise_distribution,
+        generator,
+    );
+
+    new_ct
+}
+
+pub fn encrypt_lwe_ciphertext<Scalar, NoiseDistribution, KeyCont, OutputCont, Gen>(
+    lwe_secret_key: &LweSecretKey<KeyCont>,
+    output: &mut LweCiphertext<OutputCont>,
+    encoded: Plaintext<Scalar>,
+    noise_distribution: NoiseDistribution,
+    generator: &mut EncryptionRandomGenerator<Gen>,
+) where
+    Scalar: Encryptable<Uniform, NoiseDistribution>,
+    NoiseDistribution: Distribution,
+    KeyCont: Container<Element = Scalar>,
+    OutputCont: ContainerMut<Element = Scalar>,
+    Gen: ByteRandomGenerator,
+{
+    assert!(
+        output.lwe_size().to_lwe_dimension() == lwe_secret_key.lwe_dimension(),
+        "Mismatch between LweDimension of output ciphertext and input secret key. \
+        Got {:?} in output, and {:?} in secret key.",
+        output.lwe_size().to_lwe_dimension(),
+        lwe_secret_key.lwe_dimension()
+    );
+
+    let (mut mask, mut body) = output.get_mut_mask_and_body();
+
+    fill_lwe_mask_and_body_for_encryption(
+        lwe_secret_key,
+        &mut mask,
+        &mut body,
+        encoded,
+        noise_distribution,
+        generator,
+    );
+}
+```
+
+到这里我们已经基本知道是如何`encrypt`的了，`Plaintext`相当于对`message`做了一个提升，这个提升以后将会被如何用到呢？
+
 
 ### 总结
 

@@ -18,6 +18,7 @@
 - 调用`encrypt_words_radix_impl`加密每个`block`，得到`8`个`block`的`ciphertext`
 - 调用`Ciphertext::new`构造最终的`ciphertext`，其中`message_modulus`为`4`，`carry_modulus`为`4`
 - 返回最终的`ciphertext`是一个`Vec<Vec<u64>>`
+- `degree` 是如何设置的？
 
 这种情况下如何做运算，比如`+`如何计算？
 
@@ -117,6 +118,8 @@ pub struct ServerKey {
 ```rust
 impl ServerKey {
     pub fn add_parallelized<T>(&self, ct_left: &T, ct_right: &T) -> T
+    /// zpf ct_left = FheInt16::encrypt(23i16, &client_key);
+    /// zpf ct_right = FheInt16::encrypt(3i16, &client_key);
     where
         T: IntegerRadixCiphertext,
     {
@@ -169,6 +172,29 @@ pub trait IntegerRadixCiphertext: IntegerCiphertext + Sync + Send + From<Vec<Cip
     }
 }
 ```
+
+`Ciphertext::carry_is_empty`
+`src/shortint/ciphertext/standard.rs`
+```rust
+pub struct Ciphertext {
+    pub ct: LweCiphertextOwned<u64>,
+    pub degree: Degree, //zpf usize
+    pub(crate) noise_level: NoiseLevel,
+    pub message_modulus: MessageModulus,
+    pub carry_modulus: CarryModulus,
+    pub pbs_order: PBSOrder,
+}
+
+
+impl Ciphertext {
+    pub fn carry_is_empty(&self) -> bool {
+        self.degree.get() < self.message_modulus.0
+    }
+}
+```
+
+> 对于`carry_is_empty`, 我们需要知道`degree`是什么时候被赋值的，又是如何变化的, `encrypt`的时候给`degree`赋值了吗？写个程序验证一下
+
 
 该方法 `block_carries_are_empty` 的主要功能是检查当前的加密整数（`Ciphertext`）中的每一个块是否都有空的进位。该方法通过遍历所有块并调用每个块的 `carry_is_empty` 方法来实现这一点。最终，如果所有块的进位都为空，则返回 `true`；否则返回 `false`。
 
