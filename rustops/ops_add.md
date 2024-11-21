@@ -179,6 +179,8 @@ pub trait IntegerRadixCiphertext: IntegerCiphertext + Sync + Send + From<Vec<Cip
 pub struct Ciphertext {
     pub ct: LweCiphertextOwned<u64>,
     pub degree: Degree, //zpf usize
+    // zpf Degree 初始化的时候会被设置成message_modulus -1
+    // 在计算的时候值会随着计算次数而增加
     pub(crate) noise_level: NoiseLevel,
     pub message_modulus: MessageModulus,
     pub carry_modulus: CarryModulus,
@@ -224,7 +226,7 @@ impl ServerKey {
         &self,
         lhs: &mut T,
         rhs: &T,
-        input_carry: Option<&BooleanBlock>,
+        input_carry: Option<&BooleanBlock>, //zpf None
     ) where
         T: IntegerRadixCiphertext,
     {
@@ -234,7 +236,7 @@ impl ServerKey {
 
         let mut cloned_rhs;
 
-        let rhs = if rhs.block_carries_are_empty() {
+        let rhs = if rhs.block_carries_are_empty() { //zpf return rhs
             rhs
         } else {
             cloned_rhs = rhs.clone();
@@ -242,7 +244,7 @@ impl ServerKey {
             &cloned_rhs
         };
 
-        self.advanced_add_assign_with_carry_parallelized(
+        self.advanced_add_assign_with_carry_parallelized( //zpf return Option<BooleanBlock>
             lhs.blocks_mut(),
             rhs.blocks(),
             input_carry, //zpf none
@@ -265,8 +267,8 @@ impl ServerKey {
         &self,
         lhs: &mut [Ciphertext],
         rhs: &[Ciphertext],
-        input_carry: Option<&BooleanBlock>,
-        requested_flag: OutputFlag,
+        input_carry: Option<&BooleanBlock>,  //zpf None
+        requested_flag: OutputFlag,          //zpf None
     ) -> Option<BooleanBlock> {
         if self.is_eligible_for_parallel_single_carry_propagation(lhs.len()) {
             self.advanced_add_assign_with_carry_at_least_4_bits(
@@ -297,8 +299,8 @@ impl ServerKey {
         &self,
         lhs: &mut [Ciphertext],
         rhs: &[Ciphertext],
-        input_carry: Option<&BooleanBlock>,
-        requested_flag: OutputFlag,
+        input_carry: Option<&BooleanBlock>,  //zpf None
+        requested_flag: OutputFlag,          //zpf None
     ) -> Option<BooleanBlock> {
         // Empty rhs is a specially allowed 'weird' case to
         // act like a 'propagate single carry' function.
@@ -334,6 +336,7 @@ impl ServerKey {
         };
 
         // Perform the block additions
+        // zpf 终于终于我们看到加法被执行了
         for (lhs_b, rhs_b) in lhs.iter_mut().zip(rhs.iter()) {
             self.key.unchecked_add_assign(lhs_b, rhs_b);
         }
@@ -508,7 +511,7 @@ impl ServerKey {
         lhs: &mut [Ciphertext],
         rhs: &[Ciphertext],
         input_carry: Option<&BooleanBlock>, //zpf None
-        requested_flag: OutputFlag,
+        requested_flag: OutputFlag,         //zpf None
     ) -> Option<BooleanBlock> {
         assert_eq!(
             lhs.len(),
@@ -725,6 +728,7 @@ impl ServerKey {
 ```rust
 pub(crate) fn unchecked_add_assign(ct_left: &mut Ciphertext, ct_right: &Ciphertext) {
     lwe_ciphertext_add_assign(&mut ct_left.ct, &ct_right.ct);
+    //zpf degree 这里我们首次看到degree 的变化，这可能与LUT 有关
     ct_left.degree = Degree::new(ct_left.degree.get() + ct_right.degree.get());
     ct_left.set_noise_level(ct_left.noise_level() + ct_right.noise_level());
 }

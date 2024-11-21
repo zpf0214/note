@@ -2,6 +2,7 @@
 
 还是要知道`encrypt`之后`ciphertext`的形式是怎么样的，不然其实还是没有办法对整个流程有更为清晰的了解
 
+`src/high_level_api/integers/signed/ops.rs`
 ```rust
     /// let (client_key, server_key) = generate_keys(ConfigBuilder::default());
     /// set_server_key(server_key);
@@ -16,8 +17,8 @@
 ## `FheInt16::encrypt(23i16, &client_key);`
 
 我们已知：`FheInt16 = FheInt<FheInt16Id>`
-`src/high_level_api/integers/signed/base.rs`
 
+`src/high_level_api/integers/signed/base.rs`
 ```rust
 pub struct FheInt<Id: FheIntId> {
     pub(in crate::high_level_api) ciphertext: RadixCiphertext,
