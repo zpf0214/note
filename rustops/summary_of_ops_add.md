@@ -14,7 +14,7 @@
     /// let result: i16 = result.decrypt(&client_key);
 ```
 
-我们已知`23i16`在`encrypt`之前会被按照2个bit一组拆成`8*2`数组: `[3，1，1，0，0，0，0，0]`
+我们已知`23i16`在`encrypt`之前会被按照2个bit一组拆成`8*2`数组: `[3u64，1，1，0，0，0，0，0]`
 
 `Plaintext = 3 * 2^63 / 2^4`, 其中`2^4`是`plaintext modulus`
 
