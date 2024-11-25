@@ -69,8 +69,6 @@ impl ServerKey {
 即`let result = &result + &a` 那么我们就会进入到`lookup_table`的过程之中
 
 
-我们从这里开始梳理整个流程
-
 `add_parallelized(&*lhs.ciphertext.on_cpu(), &*rhs.ciphertext.on_cpu());`
 `src/integer/server_key/radix_parallel/add.rs`
 ```rust
