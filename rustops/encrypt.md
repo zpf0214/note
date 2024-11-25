@@ -212,6 +212,50 @@ Ciphertext &= LweCiphertextOwned<u64> \\
 ```
 
 根据例子，`Id`是`FheInt16Id`，`num_bits`的实现位于`src/high_level_api/integers/signed/static_.rs`
+```rust
+macro_rules! static_int_type {
+    // Defines a static integer type that uses
+    // the `Radix` representation
+    (
+        $(#[$outer:meta])*
+        Signed {
+            num_bits: $num_bits:literal,
+        }
+    ) => {
+        // Define the Id of the FheInt concrete/specialized type
+        ::paste::paste! {
+            #[doc = concat!("Id for the [FheInt", stringify!($num_bits), "] data type.")]
+            #[derive(Copy, Clone, Debug, Default, Serialize, Deserialize, NotVersioned)]
+            pub struct [<FheInt $num_bits Id>];
+
+            impl IntegerId for [<FheInt $num_bits Id>] {
+                fn num_bits() -> usize {
+                    $num_bits
+                }
+            }
+
+            impl FheId for [<FheInt $num_bits Id>] { }
+
+            impl FheIntId for [<FheInt $num_bits Id>] { }
+        }
+
+        // Define all specialization of all the necessary types
+        ::paste::paste! {
+            #[doc = concat!("A signed integer type with ", stringify!($num_bits), " bits")]
+            #[doc = ""]
+            #[doc = "See [FheInt]"]
+            $(#[$outer])*
+            pub type [<FheInt $num_bits>] = FheInt<[<FheInt $num_bits Id>]>;
+
+            #[doc = concat!("A compressed signed integer type with ", stringify!($num_bits), " bits")]
+            pub type [<Compressed FheInt $num_bits>] = CompressedFheInt<[<FheInt $num_bits Id>]>;
+
+            // Conformance Params
+            pub type [<FheInt $num_bits ConformanceParams>] = FheIntConformanceParams<[<FheInt $num_bits Id>]>;
+        }
+    };
+}
+```
 
 ##### `key.message_modulus()`
 
