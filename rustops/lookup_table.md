@@ -1,5 +1,10 @@
 # `lookup_table`
 
+## 遗留
+
+- `fill_accumulator`具体实现细节，这里目前其实是没有搞清楚的(2024年11月26日)
+- `message_blocks/carry_blocks` 是`Ciphertext(6)`，还是`6u64`?
+
 EXAMPLE 1
 
 `src/high_level_api/integers/signed/ops.rs`
@@ -192,7 +197,8 @@ impl ServerKey {
             if highest_degree >= (self.key.message_modulus.0 - 1) * 2 { //zpf true
                 // At least one of the blocks has more than one carry,
                 // we need to extract message and carries, then add + propagate
-                let (mut message_blocks, carry_blocks) =
+                let (mut message_blocks, carry_blocks) = //zpf message_blocks/carry_blocks 是Ciphertext(6)，还是6u64
+                                                         //zpf 这里是在生成lookup_table，我们在进行值计算的时候应该是6u64
                     extract_message_and_carry_blocks(&ctxt.blocks()[start_index..]);
 
                 ctxt.blocks_mut()[start_index] = message_blocks.remove(0);
