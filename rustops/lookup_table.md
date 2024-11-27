@@ -164,7 +164,8 @@ impl ServerKey {
         // Extract message blocks and carry blocks from the
         // input block slice.
         // Carries Vec has one less block than message Vec
-        let extract_message_and_carry_blocks = |blocks: &[crate::shortint::Ciphertext]| { //zpf 这是一个闭包函数，主要是在处理carry_blocks/message_blocks
+        let extract_message_and_carry_blocks = |blocks: &[crate::shortint::Ciphertext]| { 
+            //zpf 这是一个闭包函数，主要是在处理carry_blocks/message_blocks
             let num_blocks = blocks.len();
 
             rayon::join(
