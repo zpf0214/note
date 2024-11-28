@@ -3,6 +3,7 @@
 ## 遗留
 
 - `fill_accumulator`具体实现细节，这里目前其实是没有搞清楚的(2024年11月26日)
+    - 这个细节很重要，它决定了我们的加法到底要如何实现
 - `message_blocks/carry_blocks` 是`Ciphertext(6)`，还是`6u64`?
 
 EXAMPLE 1
