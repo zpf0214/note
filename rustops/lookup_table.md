@@ -672,7 +672,7 @@ add_parallelized(result, a)
 -> apply_programmable_bootstrap
 ```
 
-最为关键的地方就是在做`message_extract`的时候做了一个定死了大小的rotate，从而修改了test polynomial
+> 最为关键的地方就是在做`message_extract`的时候做了一个定死了大小的rotate，从而修改了test polynomial
 
 ## `carry_extract`
 

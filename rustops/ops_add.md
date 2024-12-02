@@ -25,6 +25,15 @@
 - `plaintext`大小是多少？这里就是`2bits`？
 - 因为是一个`Torus`，进位又是如何表示？
 
+## 遗留
+
+`src/integer/server_key/radix_parallel/add.rs`
+`advanced_add_assign_with_carry_at_least_4_bits`
+
+这个函数的细节还有些不清楚的地方，有时间可以再理解其中的细节。
+
+
+
 ## `let result = &a + &b;`
 
 通过之前的讨论，我们知道`&a + &b`中的`+`被重载了，我们顺着这里继续往下讨论
@@ -404,6 +413,7 @@ impl ServerKey {
         };
 
         // Second step
+        // zpf 这里在做什么？
         let (mut prepared_blocks, resolved_carries) = {
             let (propagation_simulators, resolved_carries) = self
                 .compute_propagation_simulators_and_groups_carries(grouping_size, &block_states);
@@ -858,4 +868,6 @@ impl ServerKey {
 }
 ```
 
+## Summary
 
+这种做法非常适合做并行化的处理，而且并行化处理也非常直观，也不会有非常复杂的数据竞争问题
