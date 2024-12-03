@@ -14,6 +14,11 @@
     /// let result: i16 = result.decrypt(&client_key);
 ```
 
+## 遗留
+
+> 我们在将rust移植到cpp的时候发现有符号和无符号的区别还是很大的，所以我们还是要看看无符号是怎么做的
+> 具体需要考虑的有`encrypt`阶段哪些步骤会涉及到有/无符号的具体做法
+
 ## `FheInt16::encrypt(23i16, &client_key);`
 
 我们已知：`FheInt16 = FheInt<FheInt16Id>`
