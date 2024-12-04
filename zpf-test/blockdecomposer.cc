@@ -1,6 +1,7 @@
 #include <iostream>
 #include <array>
 #include <cstdint>
+#include<cmath>
 #include <bitset>
 
 using namespace std;
@@ -11,7 +12,7 @@ int main() {
 
     for (int i = 0; i < 16; ++i) {
         // Extract the 2-bit chunk from the current position
-        bits[i] = (value >> (i * 2)) & 0x3;
+        bits[i] = (value >> (i * 2)) & 3;
     }
 
     // Print the result in reverse order to show the most significant chunks first
@@ -48,6 +49,10 @@ int main() {
     
     auto ans = static_cast<int64_t>(value); //不是直接填充，而是会根据最高位进行填充
     cout << ans << endl;
+
+    int ilog = 8;
+    auto ilogr = log2(ilog);
+    std::cout << ilogr << std::endl;
 
     return 0;
 }
