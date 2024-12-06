@@ -7,7 +7,7 @@
 using namespace std;
 
 int main() {
-    int32_t value = -23;
+    int32_t value = 23;
     std::array<int32_t, 16> bits;
 
     for (int i = 0; i < 16; ++i) {
