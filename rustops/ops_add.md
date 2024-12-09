@@ -29,6 +29,7 @@
 
 `src/integer/server_key/radix_parallel/add.rs`
 `advanced_add_assign_with_carry_at_least_4_bits`
+加法过程遇到`OutputFlag::Overflow` 也需要用到双参数`LUT` ，可以和乘法的作比较
 
 这个函数的细节还有些不清楚的地方，有时间可以再理解其中的细节。
 
