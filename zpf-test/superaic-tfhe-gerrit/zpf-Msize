@@ -1,0 +1,12 @@
+src/libtfhe-superaic-core/tgsw-functions.cpp:224:    const Torus32 indic = modSwitchToTorus32(1, Msize);
+src/libtfhe-superaic-core/tgsw-functions.cpp:250:    int32_t result = modSwitchFromTorus32(phase->coefsT[0], Msize);
+src/libtfhe-superaic-core/tlwe-functions.cpp:79:    for (int32_t i = 0; i < N; ++i) message->coefsT[i] = approxPhase(phase->coefsT[i], Msize);
+src/libtfhe-superaic-core/tlwe-functions.cpp:87:    tLweApproxPhase(result, result, Msize, key->params->N);
+src/libtfhe-superaic-core/tlwe-functions.cpp:95:    Torus32 result = approxPhase(phase->coefsT[0], Msize);
+src/libtfhe-superaic-core/lwe-functions.cpp:91:    return approxPhase(phi, Msize);
+src/libtfhe-superaic-core/numeric-functions.cpp:65:EXPORT Torus32 approxPhase(Torus32 phase, int32_t Msize){
+src/libtfhe-superaic-core/numeric-functions.cpp:79:EXPORT int32_t modSwitchFromTorus32(Torus32 phase, int32_t Msize){
+src/libtfhe-superaic-core/numeric-functions.cpp:91:EXPORT Torus32 modSwitchToTorus32(int32_t mu, int32_t Msize){
+src/libtfhe-superaic-core/include/tfhe_superaic_torus.h:71:EXPORT Torus32 approxPhase(Torus32 phase, int32_t Msize);
+src/libtfhe-superaic-core/include/tfhe_superaic_torus.h:81:EXPORT int32_t modSwitchFromTorus32(Torus32 phase, int32_t Msize);
+src/libtfhe-superaic-core/include/tfhe_superaic_torus.h:86:EXPORT Torus32 modSwitchToTorus32(int32_t mu, int32_t Msize);
