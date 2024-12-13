@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 
-add_subdirectory(googletest EXCLUDE_FROM_ALL)
+#add_subdirectory(googletest EXCLUDE_FROM_ALL)
 
 
 #if (ENABLE_MEMTESTS  STREQUAL "ON" )
