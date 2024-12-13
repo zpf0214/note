@@ -87,7 +87,7 @@ EXPORT Torus32 lwePhase(const LweSample* sample, const LweKey* key){
 EXPORT Torus32 lweSymDecrypt(const LweSample* sample, const LweKey* key, const int32_t plaintext_modulus){
     Torus32 phi;
 
-    phi = lwePhase(sample, key);
+    phi = lwePhase(sample, key); //zpf 这个看上去还是非常直接的
     return approxPhase(phi, plaintext_modulus);
 }
 
@@ -228,7 +228,7 @@ EXPORT void lweSubTo(LweSample* result, const LweSample* sample, const LweParams
 #else
     for (int32_t i = 0; i < n; ++i) ra[i] -= sa[i];
 #endif
-    result->b -= sample->b;
+    result->b -= sample->b; //zpf 是这里的减法导致最终结果的不一致吗？
     result->current_variance += sample->current_variance; 
 }
 

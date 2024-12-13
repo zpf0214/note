@@ -109,7 +109,10 @@ else()
         #        message_encode
         #        ops_add
         #        ops_add_with_carry
-        decrypt_with_plaintext_modulus
+        #        decrypt_with_plaintext_modulus
+        #        macros_decrypt_with_plaintext_modulus_macros
+        #        macros_modSwitch_with_plaintext_modulus_macros
+        zpf_for_bootstrap_detail
     )
 
     foreach (CORE_CPP_ITEST ${CORE_CPP_ITESTS})

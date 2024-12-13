@@ -90,7 +90,7 @@ tfhe_blindRotate(TLweSample *accum, const TGswSample *bk, const int32_t *bara, c
  * @param bk_params The parameters of bk
  */
 EXPORT void tfhe_blindRotateAndExtract(LweSample *result,
-                                       const TorusPolynomial *v,
+                                       const TorusPolynomial *v, //zpf test polynomial
                                        const TGswSample *bk,
                                        const int32_t barb,
                                        const int32_t *bara,
@@ -227,6 +227,7 @@ EXPORT void tfhe_programmable_bootstrap_woKS(LweSample *result,
     int32_t barb = modSwitchFromTorus32(x->b, Nx2);
     for (int32_t i = 0; i < n; i++) {
         bara[i] = modSwitchFromTorus32(x->a[i], Nx2);
+        assert(bara[i] >= 0 && bara[i] < Nx2);
     }
 
     testPolynomialGenWithPBSTable(testvect, N, truth_table_size, truth_table);

@@ -20,7 +20,8 @@ static const double _two31_double = _two31;
 default_random_engine generator;
 uniform_int_distribution<Torus32> uniformTorus32_distrib(INT32_MIN, INT32_MAX);
 //uniform_int_distribution<int32_t> uniformInt_distrib(INT_MIN, INT_MAX);
-bool _use_fix_random = false;
+bool _use_fix_random = true;
+//bool _use_fix_random = false;
 struct Exception42 {
 };
 
@@ -63,7 +64,8 @@ EXPORT double t32tod(Torus32 x) {
 //
 // "travailler sur 63 bits au lieu de 64, car dans nos cas pratiques, c'est plus précis"
 EXPORT Torus32 approxPhase(Torus32 phase, int32_t plaintext_modulus){
-    uint64_t interv = ((UINT64_C(1)<<63)/plaintext_modulus)*2; // width of each intervall
+    uint64_t interv = ((UINT64_C(1)<<63)/plaintext_modulus); // width of each intervall
+    //uint64_t interv = ((UINT64_C(1)<<63)/plaintext_modulus)*2; // width of each intervall
     uint64_t half_interval = interv/2; // begin of the first intervall
     uint64_t phase64 = (uint64_t(phase)<<32) + half_interval;
     //floor to the nearest multiples of interv
@@ -77,7 +79,8 @@ EXPORT Torus32 approxPhase(Torus32 phase, int32_t plaintext_modulus){
 //
 // "travailler sur 63 bits au lieu de 64, car dans nos cas pratiques, c'est plus précis"
 EXPORT int32_t modSwitchFromTorus32(Torus32 phase, int32_t plaintext_modulus){
-    uint64_t interv = ((UINT64_C(1)<<63)/plaintext_modulus)*2; // width of each intervall
+    uint64_t interv = ((UINT64_C(1)<<63)/plaintext_modulus); // zpf 尝试按照论文进行修改
+    //uint64_t interv = ((UINT64_C(1)<<63)/plaintext_modulus)*2; // width of each intervall
     uint64_t half_interval = interv/2; // begin of the first intervall
     uint64_t phase64 = (uint64_t(phase)<<32) + half_interval;
     //floor to the nearest multiples of interv
@@ -89,7 +92,8 @@ EXPORT int32_t modSwitchFromTorus32(Torus32 phase, int32_t plaintext_modulus){
 //
 // "travailler sur 63 bits au lieu de 64, car dans nos cas pratiques, c'est plus précis"
 EXPORT Torus32 modSwitchToTorus32(int32_t mu, int32_t plaintext_modulus){
-    uint64_t interv = ((UINT64_C(1)<<63)/plaintext_modulus)*2; // width of each intervall
+    uint64_t interv = ((UINT64_C(1)<<63)/plaintext_modulus); // zpf 尝试按照论文修改
+    //uint64_t interv = ((UINT64_C(1)<<63)/plaintext_modulus)*2; // width of each intervall
     uint64_t phase64 = mu*interv;
     //floor to the nearest multiples of interv
     return phase64>>32;

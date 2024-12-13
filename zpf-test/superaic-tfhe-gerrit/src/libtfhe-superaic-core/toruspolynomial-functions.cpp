@@ -136,6 +136,7 @@ EXPORT void torusPolynomialMulByXaiMinusOne(TorusPolynomial *result, int32_t a, 
 
 
 //result= X^{a}*source
+//zpf 参见论文《guideToFullyHomomorphicEncryption》19page
 EXPORT void torusPolynomialMulByXai(TorusPolynomial *result, int32_t a, const TorusPolynomial *source) {
     const int32_t N = source->N;
     Torus32 *out = result->coefsT;

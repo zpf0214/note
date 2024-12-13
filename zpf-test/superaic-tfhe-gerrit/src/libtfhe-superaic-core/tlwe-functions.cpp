@@ -20,6 +20,7 @@ EXPORT void tLweKeyGen(TLweKey *result) {
     for (int32_t i = 0; i < k; ++i)
         for (int32_t j = 0; j < N; ++j)
             result->key[i].coefs[j] = _use_fix_random ? 0 : distribution(generator);
+            //zpf 现在怀疑是空间类型导致无法正确求解，但是这里不会有这种问题，因为值只能是0 or 1
 }
 
 /*create an homogeneous tlwe sample*/

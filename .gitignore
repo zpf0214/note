@@ -4,5 +4,3 @@
 *.swo
 
 **/build*/
-**/googletest/
-**/muduo/
