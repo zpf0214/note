@@ -161,7 +161,7 @@ namespace {
             Torus32 message = modSwitchToTorus32(messageInM, plaintext_modulus); \
             lweSymEncrypt(insample, message, alpha, key); \
             LweSample *result_message = new_LweSample(in_params); \
-            tfhe_programmable_bootstrap(result_message, bk, truth_table, plaintext_modulus, insample); \
+            tfhe_bootstrap(result_message, bk,  plaintext_modulus, insample); \
             Torus32 decrypt_message = lweSymDecrypt(result_message, key, plaintext_modulus); \
             int32_t m_decrypt = modSwitchFromTorus32(decrypt_message,plaintext_modulus); \
             ASSERT_EQ(f(messageInM, plaintext_modulus) , m_decrypt); \
@@ -209,7 +209,7 @@ namespace {
             Torus32 message = modSwitchToTorus32(messageInM, plaintext_modulus); \
             lweSymEncrypt(insample, message, alpha, key); \
             LweSample *result_message = new_LweSample(in_params); \
-            tfhe_programmable_bootstrap(result_message, bk, truth_table, plaintext_modulus, insample); \
+            tfhe_bootstrap(result_message, bk,  plaintext_modulus, insample); \
             Torus32 decrypt_message = lweSymDecrypt(result_message, key, plaintext_modulus); \
             int32_t m_decrypt = modSwitchFromTorus32(decrypt_message,plaintext_modulus); \
             ASSERT_EQ(f(messageInM, plaintext_modulus) , m_decrypt); \

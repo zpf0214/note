@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 
-#add_subdirectory(googletest EXCLUDE_FROM_ALL)
+add_subdirectory(googletest EXCLUDE_FROM_ALL)
 
 
 #if (ENABLE_MEMTESTS  STREQUAL "ON" )
@@ -110,9 +110,9 @@ else()
         #        ops_add
         #        ops_add_with_carry
         #        decrypt_with_plaintext_modulus
-        #        macros_decrypt_with_plaintext_modulus_macros
+        macros_decrypt_with_plaintext_modulus_macros
         #        macros_modSwitch_with_plaintext_modulus_macros
-        zpf_for_bootstrap_detail
+        #        zpf_for_bootstrap_detail
     )
 
     foreach (CORE_CPP_ITEST ${CORE_CPP_ITESTS})
@@ -121,7 +121,7 @@ else()
     PRIVATE
         tfhe_superaic_core 
         tfhe_superaic_server
-        muduo_net
+        #muduo_net
         gtest gtest_main -lpthread
         )
         add_test(

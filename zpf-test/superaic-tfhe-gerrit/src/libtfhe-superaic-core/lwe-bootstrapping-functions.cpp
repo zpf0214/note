@@ -192,7 +192,15 @@ EXPORT void tfhe_bootstrap_woKS(LweSample *result,
 
     //the initial testvec = [mu,mu,mu,...,mu]
     //zpf 这里如果使用testPolynomialGen生成testvect，那么这个函数就必须要传入plaintext_modulus
-    for (int32_t i = 0; i < N; i++) testvect->coefsT[i] = mu;
+    //for (int32_t i = 0; i < N; i++) testvect->coefsT[i] = mu;
+
+    {
+        int32_t plaintext_modulus = 16; //zpf 硬编码
+        for(int i=0; i<N; i++){
+            int32_t polynomial_elem = static_cast<int32_t>(double(i) * plaintext_modulus / (N*2) + 0.5);
+            testvect->coefsT[i] = modSwitchToTorus32(polynomial_elem, plaintext_modulus);
+        }
+    }
 
     tfhe_blindRotateAndExtract(result, testvect, bk->bk, barb, bara, n, bk_params);
 
