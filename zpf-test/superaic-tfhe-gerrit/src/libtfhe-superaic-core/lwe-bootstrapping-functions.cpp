@@ -232,9 +232,15 @@ EXPORT void tfhe_programmable_bootstrap_woKS(LweSample *result,
     TorusPolynomial *testvect = new_TorusPolynomial(N);
     int32_t *bara = new int32_t[N];
 
-    int32_t barb = modSwitchFromTorus32(x->b, Nx2);
+    int32_t barb = modSwitchFromTorus32(x->b, Nx2); //zpf guideToFullyHomomorphicEncryption page31
+                                                    //论文中要求0 <= u < N
+                                                    //而当高位是1的时候就无法满足上述条件，
+                                                    //我们可以将值打印出来看看是否没有被满足
+                                                    //现在我们所有的a其实都被赋值为0，所以b == u
+    cout << "barb: " << barb << " N: " << N << " In function tfhe_programmable_bootstrap_woKS need barb < N assumed a is 0" << endl;
     for (int32_t i = 0; i < n; i++) {
         bara[i] = modSwitchFromTorus32(x->a[i], Nx2);
+        assert(bara[i] == 0);
         assert(bara[i] >= 0 && bara[i] < Nx2);
     }
 
