@@ -9,6 +9,44 @@
 
 namespace tfhe_superaic {
 
+// TODO 目前只支持一个加速器.要支持多个加速器.
+static std::shared_ptr<TFHE_ACC> g_ACC = nullptr;
+mutex acc_mtx;
+
+
+static std::shared_ptr<TFHE_ACC> ACC_factory(){
+    // 如果有xdma设备，那么就用FPGA加速器，否则就用CPU加速器
+    uint32_t version;
+    bool has_dev = get_FPGA_version(FPGA_ACC_V0::XDMA_USER_DEV,version);
+    if(has_dev) {
+        if(FPGA_ACC_V0::match(version)){
+            printf("FIND FPGA Device!\n");
+            std::shared_ptr<FPGA_ACC_V0> fpga = std::shared_ptr<FPGA_ACC_V0>(new FPGA_ACC_V0());
+            fpga->init();
+            return fpga;
+
+        }else{
+            printf("FIND FPGA Device, but version unknow! 0x%x\n",version);
+            return nullptr;
+        }
+    }else{
+        printf("No FPGA Device, use CPU!\n");
+        std::shared_ptr<CPU_ACC> cpu = std::shared_ptr<CPU_ACC>(new CPU_ACC());
+        return cpu;
+
+    }
+
+}
+
+std::shared_ptr<TFHE_ACC> TFHE_ACC::get_valid_acc(void){
+    lock_guard<mutex> lock(acc_mtx);
+    if(!g_ACC) {
+        g_ACC = ACC_factory();
+    }
+
+    return g_ACC;
+}
+
 shared_ptr<Session> TFHE_ACC::get_session(Session_ID_t sessionID)
 {
     lock_guard<mutex> lock(session_mtx);
@@ -59,7 +97,15 @@ TFHE_ACC::TFHE_ACC(int max_sessions, ACC_TYPE type, CAPABILITY capability):
 }
 
 size_t TFHE_ACC::get_CPU_exector_num(void) {
-    return std::thread::hardware_concurrency();
+    size_t cpu_concurrency =  std::thread::hardware_concurrency();
+
+    // 不要把CPU占满，保留2核心作其他任务,以免系统卡死
+    if( cpu_concurrency > 2) {
+        cpu_concurrency -= 2;
+    }
+
+    return cpu_concurrency;
+
 }
 
 
@@ -171,15 +217,14 @@ void TFHE_ACC::tfhe_blindRotateAndExtract(LweSample *result,
     const int32_t _2N = 2 * N;
 
     TorusPolynomial *testvectbis = new_TorusPolynomial(N);
-    TLweSample *acc = new_TLweSample(accum_params);
+    std::shared_ptr<TLweSample> acc = new_TLweSample_shared(accum_params);
 
     if (barb != 0) torusPolynomialMulByXai(testvectbis, _2N - barb, v);
     else torusPolynomialCopy(testvectbis, v);
-    tLweNoiselessTrivial(acc, testvectbis, accum_params);
-    tfhe_blindRotate(acc, bk, bara, n, bk_params);
-    tLweExtractLweSample(result, acc, extract_params, accum_params);
+    tLweNoiselessTrivial(acc.get(), testvectbis, accum_params);
+    tfhe_blindRotate(acc.get(), bk, bara, n, bk_params);
+    tLweExtractLweSample(result, acc.get(), extract_params, accum_params);
 
-    delete_TLweSample(acc);
     delete_TorusPolynomial(testvectbis);
 }
 
@@ -187,8 +232,8 @@ void TFHE_ACC::tfhe_blindRotateAndExtract(LweSample *result,
 void TFHE_ACC::tfhe_blindRotate(TLweSample *accum, const TGswSample *bk, const int32_t *bara, const int32_t n, const TGswParams *bk_params) {
 
     //TGswSample* temp = new_TGswSample(bk_params);
-    TLweSample *temp = new_TLweSample(bk_params->tlwe_params);
-    TLweSample *temp2 = temp;
+    std::shared_ptr<TLweSample> temp = new_TLweSample_shared(bk_params->tlwe_params);
+    TLweSample *temp2 = temp.get();
     TLweSample *temp3 = accum;
 
     for (int32_t i = 0; i < n; i++) {
@@ -203,8 +248,6 @@ void TFHE_ACC::tfhe_blindRotate(TLweSample *accum, const TGswSample *bk, const i
         tLweCopy(accum, temp3, bk_params->tlwe_params);
     }
 
-    delete_TLweSample(temp);
-    //delete_TGswSample(temp);
 }
 
 void TFHE_ACC::tfhe_MuxRotate(TLweSample *result, const TLweSample *accum, const TGswSample *bki, const int32_t barai,

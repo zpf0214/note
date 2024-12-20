@@ -2,7 +2,7 @@
 #define TFHE_PACKAGE_H
 #include <memory>
 
-#define HEAD_MATIC 0x1234
+#define HEAD_MATIC 0x12345678
 using namespace std;
 typedef enum TFHE_PayloadType_{
     TFHE_PayloadType_Greeting = 0,
@@ -30,6 +30,9 @@ inline size_t cal_pack_size(size_t payload_size){return payload_size + get_pack_
 
 TFHE_Comm_Pack_t * allocate_comm_pack(TFHE_PayloadType_e type,uint32_t payload_size);
 void release_comm_pack(TFHE_Comm_Pack_t * pack);
+
+std::shared_ptr<TFHE_Comm_Pack_t> allocate_comm_pack_shared(TFHE_PayloadType_e type,uint32_t payload_size);
+
 bool send_proxy_pack(TFHE_Comm_Pack_t &pack, int fd);
 
 
@@ -84,7 +87,6 @@ public:
 
     virtual size_t serialize_payload(unsigned char * buffer, size_t buffer_size);
     virtual size_t de_serialize_payload(unsigned char * buffer, size_t buffer_size);
-
 };
 
 

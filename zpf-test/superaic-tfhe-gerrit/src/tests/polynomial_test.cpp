@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <polynomials_arithmetic.h>
 // #include "../include/numeric_functions.h"
+#include "test_internal.h"
 
 using namespace std;
 

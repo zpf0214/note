@@ -3,6 +3,7 @@
 #include "tfhe_package.h"
 
 #include "tfhe_superaic_server.h"
+#include "test_internal.h"
 
 using namespace std;
 using namespace tfhe_superaic;

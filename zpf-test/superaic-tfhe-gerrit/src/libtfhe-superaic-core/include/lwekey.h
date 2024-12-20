@@ -1,6 +1,6 @@
 #ifndef LweKEY_H
 #define LweKEY_H
-
+#include <memory>
 ///@file
 ///@brief This file contains the declaration of LWE key structures
 
@@ -14,6 +14,7 @@ struct LweKey {
 #ifdef __cplusplus   
    void print(void) const;
    LweKey(const LweParams* params);
+   LweKey(const std::shared_ptr<LweParams> params);
    ~LweKey();
    LweKey(const LweKey&) = delete; //forbidden 
    LweKey* operator=(const LweKey&) = delete; //forbidden
@@ -44,7 +45,8 @@ EXPORT void free_LweKey_array(int32_t nbelts, LweKey* ptr);
  * @param ptr the pointer to the first element
  * @param params the LWE parameters to use
  */
-EXPORT void init_LweKey(LweKey* ptr, const LweParams* params);
+void init_LweKey(LweKey* ptr, const LweParams* params);
+void init_LweKey(LweKey* obj, std::shared_ptr< LweParams > params);
 
 /** initializes (constructor) an array of LweKeys on an already allocated space 
  * @param nbelts the number of elements to initialize 
@@ -67,7 +69,7 @@ EXPORT void destroy_LweKey_array(int32_t nbelts, LweKey* ptr);
 /** allocates and initializes (constructor) a single LweKey 
  * @param params the LWE parameters to use
  */
-EXPORT LweKey* new_LweKey(const LweParams* params);
+//EXPORT LweKey* new_LweKey(const LweParams* params);
 /** allocates and initializes (constructor) a single LweKey 
  * @param nbelts the number of consecutive elements to create 
  * @param params the LWE parameters to use
@@ -76,10 +78,13 @@ EXPORT LweKey* new_LweKey_array(int32_t nbelts, const LweParams* params);
 
 /** destroy and frees memory space for a single LweKey 
  * @param ptr the pointer to release */
-EXPORT void delete_LweKey(LweKey* obj);
+//EXPORT void delete_LweKey(LweKey* obj);
 /** destroys and free memory space for an array of LweKey 
  * @param nbelts the number of elements 
  * @param ptr the pointer to release */
 EXPORT void delete_LweKey_array(int32_t nbelts, LweKey* obj);
 
+
+std::shared_ptr<LweKey> new_LweKey_shared(const std::shared_ptr<LweParams> params);
+std::shared_ptr<LweKey> new_LweKey_shared(const LweParams * params);
 #endif //LweKEY_H

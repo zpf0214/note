@@ -12,6 +12,9 @@
 #include "lwekey.h"
 #include "lwe-functions.h"
 
+#include "test_internal.h"
+
+
 using namespace std;
 
 

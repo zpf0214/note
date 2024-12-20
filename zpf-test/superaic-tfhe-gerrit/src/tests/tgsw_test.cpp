@@ -14,6 +14,7 @@
 #include <lagrangehalfc_arithmetic.h>
 #include "fakes/tlwe.h"
 #include "fakes/tgsw.h"
+#include "test_internal.h"
 
 #define TFHE_TEST_ENVIRONMENT 1
 
@@ -557,7 +558,20 @@ namespace {
         }
     }
 
+    TEST_F(TGswTest, tgsw_shared_pointer) {
+        TLweParams * p_tlweparams = new_TLweParams(512, 1, 2, 0., 1.);
+        std::shared_ptr<TGswParams> p_param = new_TGswParams_shared(4, 8, p_tlweparams);
+        std::shared_ptr<TGswParams> p_param2 = new_TGswParams_shared(4, 8, new_TLweParams_shared(512, 1, 2, 0., 1.));
 
+        std::shared_ptr<TGswKey> p_key = new_TGswKey_shared(params512_1);
+        std::shared_ptr<TGswKey> p_key2 = new_TGswKey_shared(p_param2);
+
+        std::shared_ptr<TGswSample> p_sample = new_TLweSample_shared(params512_1);
+        std::shared_ptr<TGswSample> p_sample2 = new_TLweSample_shared(p_param2);
+        delete_TLweParams(p_tlweparams);
+
+
+    }
 
 
     // ILA: Not used for now

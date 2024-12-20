@@ -10,6 +10,7 @@
 #include <tlwe_functions.h>
 // #include <numeric_functions.h>
 #include <polynomials_arithmetic.h>
+#include "test_internal.h"
 
 using namespace std;
 
@@ -614,7 +615,13 @@ namespace {
     }
 
 
-
+    TEST_F(TLweTest, tlwe_shared_pointer) {
+        std::shared_ptr<TLweParams> p_tlwe_param = new_TLweParams_shared(512, 1, plaintext_modulus, 0., 1.);
+        std::shared_ptr<TLweKey> p_tlwe_key = new_TLweKey_shared(p_tlwe_param.get());
+        std::shared_ptr<TLweKey> p_tlwe_key2 = new_TLweKey_shared(p_tlwe_param);
+        std::shared_ptr<TLweSample> p_tlwe_sample = new_TLweSample_shared(p_tlwe_param.get());
+        std::shared_ptr<TLweSample> p_tlwe_sample2 = new_TLweSample_shared(p_tlwe_param);
+    }
 
 
 

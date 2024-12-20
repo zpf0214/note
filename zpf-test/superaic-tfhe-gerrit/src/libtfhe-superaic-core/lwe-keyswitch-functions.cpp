@@ -116,8 +116,8 @@ void lweKeySwitchTranslate_fromArray(LweSample* result,
 	const Torus32* ai, 
 	const int32_t n, const int32_t t, const int32_t basebit){
     const int32_t base=1<<basebit;       // base=2 in [CGGI16]
-    const int32_t prec_offset=1<<(31-(1+basebit*t));
-    //const int32_t prec_offset=1<<(32-(1+basebit*t)); //precision
+    //const int32_t prec_offset=1<<(31-(1+basebit*t));
+    const int32_t prec_offset=1<<(32-(1+basebit*t)); //precision
                                                      //zpf 是否与这个值有关？
                                                      //测试了，与这里是31还是32 并没有关系
     const int32_t mask=base-1;
@@ -125,9 +125,9 @@ void lweKeySwitchTranslate_fromArray(LweSample* result,
     for (int32_t i=0;i<n;i++){
 	const uint32_t aibar=ai[i]+prec_offset;
 	for (int32_t j=0;j<t;j++){
-	    const uint32_t aij=(aibar>>(31-(j+1)*basebit)) & mask;
-	    //const uint32_t aij=(aibar>>(32-(j+1)*basebit)) & mask; //zpf amended here
-        //zpf 按道理不应该有硬编码
+	    //const uint32_t aij=(aibar>>(31-(j+1)*basebit)) & mask;
+	    const uint32_t aij=(aibar>>(32-(j+1)*basebit)) & mask; //zpf amended here
+        //zpf 不应该有硬编码
 	    if(aij != 0) {lweSubTo(result,&ks[i][j][aij],params);}
 	}
     }

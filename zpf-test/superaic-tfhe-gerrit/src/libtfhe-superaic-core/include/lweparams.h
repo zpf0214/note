@@ -53,12 +53,13 @@ EXPORT void destroy_LweParams_array(int32_t nbelts, LweParams* obj);
  
 //allocates and initialize the LweParams structure
 //(equivalent of the C++ new)
-EXPORT LweParams* new_LweParams(int32_t n, int32_t plaintext_modulus, double alpha_min, double alpha_max);
+//EXPORT LweParams* new_LweParams(int32_t n, int32_t plaintext_modulus, double alpha_min, double alpha_max);
 EXPORT LweParams* new_LweParams_array(int32_t nbelts, int32_t n, int32_t plaintext_modulus, double alpha_min, double alpha_max);
 
 //destroys and frees the LweParams structure
 //(equivalent of the C++ delete)
-EXPORT void delete_LweParams(LweParams* obj);
+//EXPORT void delete_LweParams(LweParams* obj);
 EXPORT void delete_LweParams_array(int32_t nbelts, LweParams* obj);
 
+std::shared_ptr<LweParams> new_LweParams_shared(int32_t n, int32_t plaintext_modulus, double alpha_min, double alpha_max);
 #endif //LWEPARAMS_H

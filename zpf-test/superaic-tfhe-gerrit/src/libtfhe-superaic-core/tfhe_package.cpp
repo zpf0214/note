@@ -26,6 +26,17 @@ TFHE_Comm_Pack_t * allocate_comm_pack(TFHE_PayloadType_e type,uint32_t payload_s
     pack->payload_size = payload_size;
     return pack;
 }
+
+void _delete_TFHE_Comm_Pack_t(TFHE_Comm_Pack_t * p) {
+    free(p);
+}
+
+std::shared_ptr<TFHE_Comm_Pack_t>  allocate_comm_pack_shared(TFHE_PayloadType_e type,uint32_t payload_size){
+    std::shared_ptr<TFHE_Comm_Pack_t> p = std::shared_ptr<TFHE_Comm_Pack_t>(allocate_comm_pack(type,payload_size),_delete_TFHE_Comm_Pack_t);
+    return p;
+}
+
+
 void release_comm_pack(TFHE_Comm_Pack_t * pack){
     free(pack);
 }

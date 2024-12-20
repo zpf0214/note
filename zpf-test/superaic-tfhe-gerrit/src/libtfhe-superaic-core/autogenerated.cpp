@@ -178,9 +178,14 @@ EXPORT void destroy_TGswKey_array(int32_t nbelts, TGswKey* obj) {
  
 //allocates and initialize the TGswKey structure
 //(equivalent of the C++ new)
-EXPORT TGswKey* new_TGswKey(const TGswParams* params) {
+TGswKey* new_TGswKey(const TGswParams* params) {
     return new TGswKey(params);
 }
+
+TGswKey* new_TGswKey(std::shared_ptr<TGswParams>  params) {
+    return new TGswKey(params);
+}
+
 EXPORT TGswKey* new_TGswKey_array(int32_t nbelts, const TGswParams* params) {
     TGswKey* obj = alloc_TGswKey_array(nbelts);
     init_TGswKey_array(nbelts,obj,params);
@@ -238,9 +243,14 @@ EXPORT void destroy_TGswParams_array(int32_t nbelts, TGswParams* obj) {
  
 //allocates and initialize the TGswParams structure
 //(equivalent of the C++ new)
-EXPORT TGswParams* new_TGswParams(int32_t l, int32_t Bgbit, const TLweParams* tlwe_params) {
+TGswParams* new_TGswParams(int32_t l, int32_t Bgbit, const TLweParams* tlwe_params) {
     return new TGswParams(l,Bgbit,tlwe_params);
 }
+
+TGswParams* new_TGswParams(int32_t l, int32_t Bgbit, std::shared_ptr< TLweParams > tlwe_params) {
+    return new TGswParams(l,Bgbit,tlwe_params);
+}
+
 EXPORT TGswParams* new_TGswParams_array(int32_t nbelts, int32_t l, int32_t Bgbit, const TLweParams* tlwe_params) {
     TGswParams* obj = alloc_TGswParams_array(nbelts);
     init_TGswParams_array(nbelts,obj,l,Bgbit,tlwe_params);
@@ -301,7 +311,7 @@ EXPORT void destroy_TLweParams_array(int32_t nbelts, TLweParams* obj) {
  
 //allocates and initialize the TLweParams structure
 //(equivalent of the C++ new)
-EXPORT TLweParams* new_TLweParams(int32_t N, int32_t k, int32_t plaintext_modulus, double alpha_min, double alpha_max) {
+TLweParams* new_TLweParams(int32_t N, int32_t k, int32_t plaintext_modulus, double alpha_min, double alpha_max) {
     return new TLweParams(N,k,plaintext_modulus,alpha_min,alpha_max);
 }
 EXPORT TLweParams* new_TLweParams_array(int32_t nbelts, int32_t N, int32_t k, int32_t plaintext_modulus, double alpha_min, double alpha_max) {

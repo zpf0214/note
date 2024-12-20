@@ -57,7 +57,8 @@ tLweExtractLweSample(LweSample *result, const TLweSample *x, const LweParams *pa
 
 
 //extractions TLwe -> Lwe 把输入的TLWEkey 从 k个N次多项式转成一维的 LWE key，长度是（kxN）
-EXPORT void tLweExtractKey(LweKey *result, const TLweKey *); //sans doute un param supplémentaire  百度翻译：34/1000实时翻译毫无疑问，这是一个额外的参数
+void tLweExtractKey(LweKey *result, const TLweKey *); //sans doute un param supplémentaire  百度翻译：34/1000实时翻译毫无疑问，这是一个额外的参数
+void tLweExtractKey(std::shared_ptr<LweKey> result, const TLweKey* key) ;
 //EXPORT void tLweExtractSample(LweSample* result, const TLweSample* x);
 
 //FFT operations

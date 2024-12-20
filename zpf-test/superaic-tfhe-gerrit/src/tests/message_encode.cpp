@@ -3,6 +3,8 @@
 #include<cassert>
 #include "tfhe.h"
 #include "message_functions.h"
+#include "test_internal.h"
+
 using namespace std;
 
 int main(){

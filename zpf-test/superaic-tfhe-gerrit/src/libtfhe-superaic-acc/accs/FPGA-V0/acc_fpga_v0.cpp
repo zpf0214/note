@@ -1,6 +1,8 @@
 #include <iostream>
 #include <cassert>
 #include <functional>
+#include <thread>
+#include <future>
 
 #include <stdint.h>
 #include <stdio.h>
@@ -10,6 +12,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <assert.h>
+#include <errno.h> 
 
 #include "libacc.h"
 #include "tfhe.h"
@@ -21,7 +24,10 @@ namespace tfhe_superaic {
 #define MAP_MASK (MAP_SIZE - 1)
 
 #define FATAL do { fprintf(stderr, "Error at line %d, file %s (%d) [%s]\n", __LINE__, __FILE__, errno, strerror(errno));  } while(0)
-
+static bool trace_reg = false;
+static const uint32_t TRACE_ALL_MAGIC = 0xffffffff;
+static uint32_t trace_write_addr = TRACE_ALL_MAGIC;  // TRACE_ALL_MAGIC 意味着跟踪所有寄存器
+static uint32_t trace_read_addr = TRACE_ALL_MAGIC;  // TRACE_ALL_MAGIC 意味着跟踪所有寄存器
 bool get_FPGA_version(const char * dev,uint32_t &version) {
     int fd;
     void *map_base, *virt_addr; 
@@ -170,9 +176,53 @@ void FPGA_ACC_V0::torusPolynomialAddMulR(TorusPolynomial* result, const IntPolyn
     run_index ++;
 }
 
+
+
+void FPGA_ACC_V0::torusPolynomialAddMulR_async(TorusPolynomial* result, const IntPolynomial* poly1, const TorusPolynomial* poly2) {
+    const int32_t N = poly1->N;
+    assert(N==1024);
+    assert(result!=poly2);
+    assert(poly2->N==N && result->N==N);
+    TorusPolynomial temp(N);
+#if 0     
+    torusPolynomialMultNaive_aux(temp.coefsT, poly1->coefs, poly2->coefsT, N);
+#else
+    shared_ptr<Executor> exec = aquire_executor();
+    //printf("Get exec:%s \n",exec->name.c_str());
+    shared_ptr<Executor_FPGA> exec_FPGA = dynamic_pointer_cast<Executor_FPGA> (exec);
+    if(!exec_FPGA) {
+        printf("exec is not FPGA executor!");
+        assert(0);
+    }
+    torusPolynomialMultFPGA(temp.coefsT,poly1->coefs,poly2->coefsT,exec_FPGA->channel,false);
+    release_executor(exec);
+
+#endif
+    torusPolynomialAddTo(result,&temp);
+}
+
+
 FPGA_ACC_V0::FPGA_ACC_V0():
     TFHE_ACC(3,ACC_FPGA,CAPABILITY_PBS){
-        paral_mul = false;
+    paral_mul = true;
+    for(int executor_idx = 0 ; executor_idx < TOTAL_MUL_CHANNELS; ++executor_idx ) {
+        string name("FPGA_Channel_");
+        name = name + to_string(executor_idx);
+        shared_ptr<Executor_FPGA> p = shared_ptr<Executor_FPGA>(new Executor_FPGA(name,executor_idx));
+        executors.append_exector(p);
+    }
+}
+
+
+shared_ptr<Executor>  FPGA_ACC_V0::aquire_executor(void) {
+
+    return executors.aquire_executor();
+
+}
+
+
+void FPGA_ACC_V0::release_executor(shared_ptr<Executor> executor) {
+    executors.release_executor(executor);
 }
 
 FPGA_ACC_V0::~FPGA_ACC_V0() {
@@ -256,7 +306,7 @@ void FPGA_ACC_V0::deinit(void) {
 }
 
 
-ACC_RESULT FPGA_ACC_V0::torusPolynomialMultFPGA(Torus32* __restrict result, const Torus32* __restrict poly1, const Torus32* __restrict poly2,uint8_t executor, bool poll) {
+ACC_RESULT FPGA_ACC_V0::torusPolynomialMultFPGA(Torus32* __restrict result, const Torus32* __restrict poly1, const Torus32* __restrict poly2,uint8_t channel, bool poll) {
     if (!user_map_base ) {
         fprintf(stderr, "user_map_base is not init\n");
         return ACC_INVALID_RES;
@@ -272,20 +322,20 @@ ACC_RESULT FPGA_ACC_V0::torusPolynomialMultFPGA(Torus32* __restrict result, cons
         return ACC_INVALID_RES;
     }
 
-    if (executor >= TOTAL_MUL_EXECULTORS) {
-        fprintf(stderr, "executor(%d) larger than TOTAL_MUL_EXECULTORS(%d)\n", executor, TOTAL_MUL_EXECULTORS);
+    if (channel >= TOTAL_MUL_CHANNELS) {
+        fprintf(stderr, "channel(%d) larger than TOTAL_MUL_EXECULTORS(%d)\n", channel, TOTAL_MUL_CHANNELS);
         return ACC_INVALID_PARAM;
     }
 
-    set_full_coef(poly1,FULL_P_START_ADDRs[executor]);
-    set_full_coef(poly2,FULL_Q_START_ADDRs[executor]);
+    set_full_coef(poly1,FULL_P_START_ADDRs[channel]);
+    set_full_coef(poly2,FULL_Q_START_ADDRs[channel]);
     if( !poll ) {
-        exec_interrupt(nullptr,executor);
+        exec_interrupt(nullptr,channel);
     }else{
-        exec_non_interrupt(nullptr,executor);
+        exec_non_interrupt(nullptr,channel);
     }
 
-    get_full_coef(result,FULL_V_START_ADDRs[executor]);
+    get_full_coef(result,FULL_V_START_ADDRs[channel]);
 
 
     return ACC_OK;
@@ -302,51 +352,75 @@ ACC_RESULT FPGA_ACC_V0::enableInterrupt(bool en) {
     return ACC_OK;
 }
 
-ACC_RESULT FPGA_ACC_V0::clearInterrupt(uint8_t executor) {
+ACC_RESULT FPGA_ACC_V0::clearInterrupt(uint8_t channel) {
     if (!user_map_base ) {
         fprintf(stderr, "user_map_base is not init\n");
         return ACC_INVALID_RES;
     }
-    assert(executor < TOTAL_MUL_EXECULTORS);
-    __write_word_mask_lite(REG_XDMA_Interrupt_Clear_Addr,0 << XDMA_Interrupt_Clear_Offsets[executor],1 << XDMA_Interrupt_Clear_Offsets[executor]);
-    __write_word_mask_lite(REG_XDMA_Interrupt_Clear_Addr,1 << XDMA_Interrupt_Clear_Offsets[executor],1 << XDMA_Interrupt_Clear_Offsets[executor]);
+    assert(channel < TOTAL_MUL_CHANNELS);
+    uint32_t address[] = {REG_XDMA_Interrupt_Clear_Addr,REG_XDMA_Interrupt_Clear_Addr};
+    uint32_t value[] = {(uint32_t)0 << XDMA_Interrupt_Clear_Offsets[channel],(uint32_t)1 << XDMA_Interrupt_Clear_Offsets[channel]};
+    uint32_t mask[] = {(uint32_t)1 << XDMA_Interrupt_Clear_Offsets[channel], (uint32_t)1 << XDMA_Interrupt_Clear_Offsets[channel]};
+
+    __write_word_mask_lite_list(address,value,mask,sizeof(address)/sizeof(address[0]));
+
     return ACC_OK;
 
 }
 
 
-ACC_RESULT FPGA_ACC_V0::start(uint8_t executor) {
+ACC_RESULT FPGA_ACC_V0::start(uint8_t channel) {
     if (!user_map_base ) {
         fprintf(stderr, "user_map_base is not init\n");
         return ACC_INVALID_RES;
     }
 
-    assert(executor < TOTAL_MUL_EXECULTORS);
+    assert(channel < TOTAL_MUL_CHANNELS);
 
-    __write_word_mask_lite(REG_PMUL_ST_Addr,0 << Polynomial_Mul_Start_Offsets[executor],1 << Polynomial_Mul_Start_Offsets[executor]);
-    __write_word_mask_lite(REG_PMUL_ST_Addr,1 << Polynomial_Mul_Start_Offsets[executor],1 << Polynomial_Mul_Start_Offsets[executor]);
+    uint32_t address[] = {REG_PMUL_ST_Addr,REG_PMUL_ST_Addr};
+    uint32_t value[] = {(uint32_t)0 << Polynomial_Mul_Start_Offsets[channel],(uint32_t)1 << Polynomial_Mul_Start_Offsets[channel]};
+    uint32_t mask[] = {(uint32_t)1 << Polynomial_Mul_Start_Offsets[channel], (uint32_t)1 << Polynomial_Mul_Start_Offsets[channel]};
+
+    __write_word_mask_lite_list(address,value,mask,sizeof(address)/sizeof(address[0]));
+
+    // 有的时候发现无法start，需要重写start，
+    // 作为PATCH，等待FPGA确认问题
+    bool verifyed = false;
+    while (!verifyed) {
+        volatile uint32_t rd_val ;
+        __read_word_lite(REG_PMUL_ST_Addr,rd_val);
+        printf("channel %d, start reg 0x%x\n",channel,rd_val);
+        if( ! (rd_val & (1 << channel)) ){
+            printf("write failed, restart!\n");
+            std::this_thread::sleep_for(std::chrono::microseconds(1));
+            __write_word_mask_lite_list(address,value,mask,sizeof(address)/sizeof(address[0]));
+        }else{
+            verifyed = true;
+        }
+
+    }
     return ACC_OK;
 }
 
-ACC_RESULT FPGA_ACC_V0::clear_start(uint8_t executor) {
+ACC_RESULT FPGA_ACC_V0::clear_start(uint8_t channel) {
     if (!user_map_base ) {
         fprintf(stderr, "user_map_base is not init\n");
         return ACC_INVALID_RES;
     }
 
-    assert(executor < TOTAL_MUL_EXECULTORS);
+    assert(channel < TOTAL_MUL_CHANNELS);
 
-    __write_word_mask_lite(REG_PMUL_ST_Addr,0 << Polynomial_Mul_Start_Offsets[executor],1 << Polynomial_Mul_Start_Offsets[executor]);
+    __write_word_mask_lite(REG_PMUL_ST_Addr,0 << Polynomial_Mul_Start_Offsets[channel],1 << Polynomial_Mul_Start_Offsets[channel]);
     return ACC_OK;
 }
 
 
-ACC_RESULT FPGA_ACC_V0::exec_non_interrupt(struct timespec *ts_dur,uint8_t executor) {
+ACC_RESULT FPGA_ACC_V0::exec_non_interrupt(struct timespec *ts_dur,uint8_t channel) {
     if (!user_map_base ) {
         fprintf(stderr, "user_map_base is not init\n");
         return ACC_INVALID_RES;
     }
-    assert(executor < TOTAL_MUL_EXECULTORS);
+    assert(channel < TOTAL_MUL_CHANNELS);
 
     uint64_t try_cnt =  10000;
     enableInterrupt(false);
@@ -356,11 +430,11 @@ ACC_RESULT FPGA_ACC_V0::exec_non_interrupt(struct timespec *ts_dur,uint8_t execu
         clock_gettime(CLOCK_MONOTONIC, &ts_start);
     }
 
-    start(executor);
+    start(channel);
     while(true){
         uint32_t read_val;
         __read_word_lite(REG_PMUL_END_Addr,read_val);
-        if(read_val & 1 << PMUL_END_Offsets[executor]){
+        if(read_val & 1 << PMUL_END_Offsets[channel]){
             break;
         }
         if(try_cnt <= 0){
@@ -373,19 +447,19 @@ ACC_RESULT FPGA_ACC_V0::exec_non_interrupt(struct timespec *ts_dur,uint8_t execu
         timespec_sub(ts_end,ts_start,*ts_dur);
     }
 
-    clear_start(executor);
+    //clear_start(channel);
     return ACC_OK;
 }
 
 
-ACC_RESULT FPGA_ACC_V0::exec_interrupt(struct timespec *ts_dur,uint8_t executor) {
+ACC_RESULT FPGA_ACC_V0::exec_interrupt(struct timespec *ts_dur,uint8_t channel) {
     if (!user_map_base ) {
         fprintf(stderr, "user_map_base is not init\n");
         return ACC_INVALID_RES;
     }
-    assert(executor < TOTAL_MUL_EXECULTORS);
+    assert(channel < TOTAL_MUL_CHANNELS);
     char event_file[128];
-    snprintf(event_file,sizeof(event_file),"//dev//xdma0_events_%d",executor);
+    snprintf(event_file,sizeof(event_file),"//dev//xdma0_events_%d",channel);
     uint32_t events = 0;
     int event_fp = 0;
     //printf("event file is %s\n",event_file);
@@ -397,25 +471,42 @@ ACC_RESULT FPGA_ACC_V0::exec_interrupt(struct timespec *ts_dur,uint8_t executor)
     if(ts_dur){
         clock_gettime(CLOCK_MONOTONIC, &ts_start);
     }
-    start(executor);
+    start(channel);
 
     // 有可能是假的中断，所以要检查 PMUL_END 过滤假中断
     bool bEnd = false;
     while ( !bEnd ){
         // pending for read
         int rc = read(event_fp,&events,4);
+        if(rc != 4) {
+            perror("read error!");
+            if(errno != ETIME) {
+                FATAL; close(event_fp);return ACC_INVALID_RES;
+
+            }else{
+                // 读超时 有可能是启动寄存器没有写入造成的，检查一下，并重新启动
+                uint32_t value;
+                printf("read time out, miss a interrupt?\n");
+                read_word_lite(REG_PMUL_ST_Addr,value);
+                if( ! (value & 1 << Polynomial_Mul_Start_Offsets[channel])){
+                    printf("start failed, restart\n");
+                    start(channel);
+                    continue;
+                }
+            }
+        }
+
         uint32_t read_val;
         __read_word_lite(REG_PMUL_END_Addr,read_val);
-        if(rc != 4) {FATAL; close(event_fp);return ACC_INVALID_RES;}
-        if(read_val & 1 << PMUL_END_Offsets[executor]){
+        if(read_val & 1 << PMUL_END_Offsets[channel]){
             bEnd = true;
         }else{
             // 当中断信号到达CPU时，LITE 总线比较慢，可能还读不到，所以要循环读几次
             int loop_count = 0;
-            while (loop_count < 2000){
+            while (loop_count < 4000){
                 if( loop_count % 100 == 0)
-                    printf("REG_PMUL_END_Addr[%d] = 0x%x\n",loop_count, read_val);
-                if(read_val & 1 << PMUL_END_Offsets[executor]){
+                    printf("REG_PMUL_END_Addr[%d] = 0x%x, try %d\n",channel, read_val,loop_count);
+                if(read_val & 1 << PMUL_END_Offsets[channel]){
                     bEnd = true;
                     break;
                 }
@@ -423,7 +514,13 @@ ACC_RESULT FPGA_ACC_V0::exec_interrupt(struct timespec *ts_dur,uint8_t executor)
                 __read_word_lite(REG_PMUL_END_Addr,read_val);
 
             }
-
+            if(!bEnd) {
+                // patch 等太久了，我重启一下？
+                // uint32_t value;
+                // read_word_lite(REG_PMUL_ST_Addr,value);
+                // printf("wait finish time out, current start reg is 0x%x\n",value);
+                // start(channel);
+            }
         }
     }
 
@@ -433,7 +530,7 @@ ACC_RESULT FPGA_ACC_V0::exec_interrupt(struct timespec *ts_dur,uint8_t executor)
     }
 
     //clear interrupt status in FPGA user interrupt
-    clearInterrupt(executor);
+    clearInterrupt(channel);
 
     return ACC_OK;
 
@@ -486,16 +583,30 @@ ACC_RESULT FPGA_ACC_V0::write_word_mask_lite(uint32_t address, uint32_t value, u
 
 void FPGA_ACC_V0::__write_word_mask_lite(uint32_t address, uint32_t value, uint32_t mask) {
 
-    volatile uint32_t *vir_addr;
-    vir_addr = (uint32_t * )((char *)user_map_base + address);
+    user_automic_flag.test_and_set();
 
-    uint32_t read_val = ltohl((*vir_addr));
-
+    uint32_t read_val = __save_read_word_lite(address);
     uint32_t write_val = (read_val & ~mask) | (value & mask);
+    __save_write_word_lite(address, write_val);
 
-    *vir_addr = htoll(write_val);
+    user_automic_flag.clear();
 
 }
+
+void FPGA_ACC_V0::__write_word_mask_lite_list(uint32_t *address, uint32_t *value, uint32_t *mask,size_t count) {
+    user_automic_flag.test_and_set();
+    for( int i = 0 ; i < count ; ++i) {
+
+        uint32_t read_val = __save_read_word_lite(address[i]);
+        uint32_t write_val = (read_val & ~mask[i]) | (value[i] & mask[i]);
+        __save_write_word_lite(address[i], write_val);
+
+
+        std::this_thread::sleep_for(std::chrono::microseconds(1));
+    }
+    user_automic_flag.clear();
+}
+
 
 ACC_RESULT FPGA_ACC_V0::read_word_lite(uint32_t address, uint32_t & value) {
     if (!user_map_base ) {
@@ -506,14 +617,11 @@ ACC_RESULT FPGA_ACC_V0::read_word_lite(uint32_t address, uint32_t & value) {
     return ACC_OK;
 }
 
-void FPGA_ACC_V0::__read_word_lite(uint32_t address, uint32_t & value) {
+void FPGA_ACC_V0::__read_word_lite(uint32_t address, volatile uint32_t & value) {
 
-
-    volatile uint32_t *vir_addr;
-    vir_addr = (uint32_t * )((char *)user_map_base + address);
-
-    value = ltohl((*vir_addr));
-
+    user_automic_flag.test_and_set();
+    value = __save_read_word_lite(address);
+    user_automic_flag.clear();
 
 }
 
@@ -529,12 +637,35 @@ ACC_RESULT FPGA_ACC_V0::write_word_lite(uint32_t address, uint32_t value) {
 
 void FPGA_ACC_V0::__write_word_lite(uint32_t address, uint32_t value) {
 
+    user_automic_flag.test_and_set();
 
+    __save_write_word_lite(address,value);
+    user_automic_flag.clear();
+}
+
+uint32_t FPGA_ACC_V0::__save_read_word_lite(uint32_t address) {
+    volatile uint32_t *vir_addr = (uint32_t * )((char *)user_map_base + address);
+    uint32_t value = *vir_addr;
+    value = ltohl(value);
+    if (trace_reg ) {
+        if (trace_read_addr == TRACE_ALL_MAGIC || trace_read_addr == address) {
+            printf("__save_read_word_lite : 0x%08x, 0x%08x\n",address,value);
+        }
+    }
+    return value;
+
+}
+void FPGA_ACC_V0::__save_write_word_lite(uint32_t address, uint32_t value) {
     volatile uint32_t *vir_addr;
     vir_addr = (uint32_t * )((char *)user_map_base + address);
-
     *vir_addr = htoll(value);
+    if (trace_reg ) {
+        if (trace_write_addr == TRACE_ALL_MAGIC || trace_write_addr == address) {
+            printf("__save_write_word_lite : 0x%08x, 0x%08x\n",address,value);
+        }
+    }
 }
+
 
 
 int FPGA_ACC_V0::get_full_coef(Torus32 * out_buffer,uint64_t address){
@@ -542,6 +673,8 @@ int FPGA_ACC_V0::get_full_coef(Torus32 * out_buffer,uint64_t address){
         fprintf(stderr, "c2h_fp is not init\n");
         return 0;
     }
+
+    lock_guard<mutex> lock(full_dma_mtx);
 
     char xdam_buffer[4*N];
     uint32_t size = sizeof(xdam_buffer);
@@ -570,6 +703,8 @@ int FPGA_ACC_V0::set_full_coef(const Torus32 * in_buffer,uint64_t address){
         fprintf(stderr, "h2c_fp is not init\n");
         return 0;
     }
+    lock_guard<mutex> lock(full_dma_mtx);
+
     char xdam_buffer[4*N];
     uint32_t size = sizeof(xdam_buffer);
     uint32_t *p = (uint32_t *)xdam_buffer;
@@ -592,8 +727,6 @@ int FPGA_ACC_V0::set_full_coef(const Torus32 * in_buffer,uint64_t address){
 
 
 ACC_RESULT FPGA_ACC_V0::programmable_bootstrap(Session_ID_t sessionID,const shared_ptr<LweSample> in_sample, int32_t * function_table, const int32_t table_size, shared_ptr<LweSample> result){
-    // 要加锁，防止函数重入的时候把 torusPolynomialAddMulR 指针给改写了。 但是这样会导致无法并行执行。目前是测试阶段，只使用一个加速器，暂时不考虑这个问题。后续要把整个计算放到类中成为成员函数才能避免这个问题。
-    //lock_guard<mutex> lock(torusPolynomialAddMulR_mtx);
 
     shared_ptr<Session> session = get_session(sessionID);
     if( session == nullptr ) {
@@ -601,8 +734,6 @@ ACC_RESULT FPGA_ACC_V0::programmable_bootstrap(Session_ID_t sessionID,const shar
         return ACC_NO_SESSION;
     }
 
-    //auto torusPolynomialAddMulR_bak = torusPolynomialAddMulR;
-    //torusPolynomialAddMulR = bind(&QEMU_ACC_V0::torusPolynomialAddMulRQemu, this,placeholders::_1,placeholders::_2,placeholders::_3);
 
     auto bk = session->get_bootstrap_key();
 
@@ -614,8 +745,49 @@ ACC_RESULT FPGA_ACC_V0::programmable_bootstrap(Session_ID_t sessionID,const shar
 
     lweKeySwitch(result.get(), bk->ks, u.get());
 
-    //torusPolynomialAddMulR = torusPolynomialAddMulR_bak;
     return ACC_OK;
+}
+
+
+/** result = result + p.sample */
+void
+FPGA_ACC_V0::tLweAddMulRTo_paral(TLweSample *result, const IntPolynomial *p, const TLweSample *sample, const TLweParams *params) {
+    const int32_t k = params->k;
+
+    std::future<void> ret[k];
+    // 这里i <= k，不仅仅计算了a，也计算了b
+    for (int32_t i = 0; i <= k; ++i)
+        ret[i] = async(launch::async,&FPGA_ACC_V0::torusPolynomialAddMulR_async, this,result->a + i, p, sample->a + i);
+
+    for (int32_t i = 0; i <= k; ++i)
+        ret[i].get();
+
+    result->current_variance += intPolynomialNormSq2(p) * sample->current_variance;
+}
+
+void FPGA_ACC_V0::tGswExternMulToTLwe_paral(TLweSample *accum, const TGswSample *sample, const TGswParams *params) {
+    const TLweParams *par = params->tlwe_params;
+    const int32_t N = par->N;
+    const int32_t kpl = params->kpl;
+    //TODO: improve this new/delete
+    IntPolynomial *dec = new_IntPolynomial_array(kpl, N);
+
+    tGswTLweDecompH(dec, accum, params);
+    tLweClear(accum, par);
+    TLweSample * tmp_lwe = new_TLweSample_array(kpl,par);
+    std::future<void> ret[kpl];
+    for (int32_t i = 0; i < kpl; i++) {
+        tLweClear(tmp_lwe + i, par);
+        ret[i] = async(launch::async,&FPGA_ACC_V0::tLweAddMulRTo_paral,this,tmp_lwe + i,&dec[i],&sample->all_sample[i],par);
+        //tLweAddMulRTo(accum, &dec[i], &sample->all_sample[i], par);
+    }
+
+    for( int32_t i= 0;i < kpl; i++) {
+        ret[i].get();
+        tLweAddTo(accum,tmp_lwe + i, par);
+    }
+    delete_TLweSample_array(kpl,tmp_lwe);
+    delete_IntPolynomial_array(kpl, dec);
 }
 
 

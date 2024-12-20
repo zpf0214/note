@@ -26,3 +26,4 @@ target_link_libraries(comparebits
 PRIVATE
     tfhe_superaic_core )
     
+add_subdirectory(demo_chatroom)

@@ -16,6 +16,12 @@ using namespace std;
 #define EXPORT
 #endif
 
+// TODO 以后要换成智能指针
+// test case 中使用了fakexxx，
+// 在tfhe_blindRotate_FFT里面使用智能指针来代替裸指针可能会导致testcase错误
+TLweSample *new_TLweSample(const TLweParams *params);
+EXPORT void delete_TLweSample(TLweSample *obj);
+
 
 #if defined INCLUDE_ALL || defined INCLUDE_TFHE_INIT_LWEBOOTSTRAPPINGKEY_FFT
 #undef INCLUDE_TFHE_INIT_LWEBOOTSTRAPPINGKEY_FFT
@@ -215,13 +221,12 @@ EXPORT void tfhe_bootstrap_FFT(LweSample *result,
                                Torus32 mu,
                                const LweSample *x) {
 
-    LweSample *u = new_LweSample(&bk->accum_params->extracted_lweparams);
+    std::shared_ptr<LweSample> u = new_LweSample_shared(&bk->accum_params->extracted_lweparams);
 
-    tfhe_bootstrap_woKS_FFT(u, bk, mu, x);
+    tfhe_bootstrap_woKS_FFT(u.get(), bk, mu, x);
     // Key switching
-    lweKeySwitch(result, bk->ks, u);
+    lweKeySwitch(result, bk->ks, u.get());
 
-    delete_LweSample(u);
 }
 #endif
 

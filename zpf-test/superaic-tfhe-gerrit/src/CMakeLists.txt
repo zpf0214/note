@@ -28,12 +28,12 @@ elseif( MUL_TYPE STREQUAL "KARATSUB" )
 endif()
 
 add_subdirectory(driver)
-#add_subdirectory(muduo)
-add_subdirectory(examples)
+add_subdirectory(muduo)
 add_subdirectory(libtfhe-superaic-core)
 add_subdirectory(libtfhe-superaic-server)
 add_subdirectory(libtfhe-superaic-client)
 add_subdirectory(libtfhe-superaic-acc)
+add_subdirectory(examples)
 
 
 if (ENABLE_TESTS)

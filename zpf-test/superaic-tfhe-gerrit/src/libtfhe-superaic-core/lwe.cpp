@@ -62,7 +62,7 @@ EXPORT void tLweExtractLweSample(LweSample* result, const TLweSample* x, const L
 
 
 //extractions Ring Lwe -> Lwe
-EXPORT void tLweExtractKey(LweKey* result, const TLweKey* key) //sans doute un param supplémentaire
+void tLweExtractKey(LweKey* result, const TLweKey* key) //sans doute un param supplémentaire
 {
     const int32_t N = key->params->N;
     const int32_t k = key->params->k;
@@ -72,4 +72,17 @@ EXPORT void tLweExtractKey(LweKey* result, const TLweKey* key) //sans doute un p
 	      result->key[i*N+j]=key->key[i].coefs[j];
     }
 }
+
+//extractions Ring Lwe -> Lwe
+void tLweExtractKey(std::shared_ptr<LweKey> result, const TLweKey* key) //sans doute un param supplémentaire
+{
+    const int32_t N = key->params->N;
+    const int32_t k = key->params->k;
+    assert(result->params->n == k*N);
+    for (int32_t i=0; i<k; i++) {
+      for (int32_t j=0; j<N; j++)
+	      result->key[i*N+j]=key->key[i].coefs[j];
+    }
+}
+
 

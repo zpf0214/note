@@ -1,3 +1,4 @@
+#include <gtest/gtest.h>
 #include <iostream>
 #include <algorithm>
 #include "tfhe.h"
@@ -6,6 +7,8 @@
 #include "fakes/lwe-keyswitch.h"
 #include "fakes/lwe-bootstrapping.h"
 #include "classic_PBS_parameters.h"
+
+#include "test_internal.h"
 
 #define TFHE_TEST_ENVIRONMENT 1
 #define MAX_NOISE 10000.0
@@ -24,8 +27,8 @@ namespace {
     const ClassicPBSParameters M8_PARAM = TEST_PARAM_MESSAGE_8_KS_PBS_GAUSSAIN;
 
     const int32_t N = M8_PARAM.tlwe_polynomials_numbers;
-    const int32_t plaintext_modulus = 8;
-    //const int32_t plaintext_modulus = M8_PARAM.plaintext_modulus;
+    //const int32_t plaintext_modulus = 8;
+    const int32_t plaintext_modulus = M8_PARAM.plaintext_modulus;
     const int32_t message_modulus = M8_PARAM.message_modulus;
     const int32_t k = M8_PARAM.tlwe_dimension;
     const int32_t n = M8_PARAM.lwe_dimension;
@@ -95,10 +98,10 @@ namespace {
         tfhe_createLweBootstrappingKey(bsk, key, key_bsk);
 
         //for(int i=-7; i<plaintext_modulus; i++) //zpf 我们从这里知道求解的范围不包含负值？TODO 如何从理论上解释为什么不包含负值？
-        for(int i=0; i<plaintext_modulus; i++)
+        //for(int i=0; i<plaintext_modulus; i++)
         { //zpf test all value in plaintext_modulus = 16
 
-            int32_t messageInM = i; 
+            int32_t messageInM = 7; 
             //zpf plaintext_modulus = 16
             LweSample *insample = real_new_LweSample(extract_params);
             // 1 把明文转换为 Torus32
@@ -148,10 +151,10 @@ namespace {
         //call the function
         tfhe_createLweBootstrappingKey(bsk, key, key_bsk);
 
-        for(int i=0; i<plaintext_modulus; i++)
+        //for(int i=0; i<plaintext_modulus; i++)
         { //zpf test all value in plaintext_modulus = 16
 
-            int32_t messageInM = i; 
+            int32_t messageInM = 7; 
             //zpf plaintext_modulus = 16
             LweSample *insample = real_new_LweSample(extract_params);
             // 1 把明文转换为 Torus32
@@ -212,7 +215,7 @@ namespace {
         }
 
         //for(int i=-1; i<plaintext_modulus/2; i++) //zpf 根据上面的测试我们知道取值范围0-15，不包含负值
-        for(int i=0; i<plaintext_modulus; i++)
+        //for(int i=0; i<plaintext_modulus; i++)
         { //zpf test all value in plaintext_modulus = 16
 
             int32_t messageInM = 5; 

@@ -5,6 +5,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <endian.h>
+#include <atomic>
+
 #include "tfhe_session.h"
 using namespace std;
 namespace tfhe_superaic {
@@ -45,13 +47,14 @@ public:
         Executor_FPGA,
     };
 
+    virtual ~Executor(){}
     bool isBusy();
     const Executor_Type executor_type;
     const string name;
     Executor(Executor_Type type,string name);
     friend class Executor_List;
 protected:
-    bool busy = false;
+    volatile bool busy = false;
 private:
     Executor(const Executor&) = delete;
     void operator =(const Executor&) = delete;
@@ -60,8 +63,8 @@ private:
 
 class Executor_FPGA :public Executor {
 public:
-    Executor_FPGA(string name);
-
+    Executor_FPGA(string name, uint8_t executor);
+    const uint8_t channel;
 private:
     Executor_FPGA(const Executor_FPGA&) = delete;
     void operator =(const Executor_FPGA&) = delete;
@@ -80,8 +83,8 @@ public:
      */
     void append_exector(shared_ptr<Executor> executor);
 
-    shared_ptr<Executor>  aquire_executor(void);
-    void release_executor(shared_ptr<Executor> executor);
+    shared_ptr<Executor>  aquire_executor(void) __attribute__((optimize("O0")));
+    void release_executor(shared_ptr<Executor> executor) __attribute__((optimize("O0")));
 private:    
     vector<shared_ptr<Executor>> executors;
     mutex _executors_mtx;
@@ -124,7 +127,7 @@ public:
     virtual ~TFHE_ACC(){};
     TFHE_ACC(int max_sessions);
 
-
+    ACC_TYPE get_type(){return type; }
 
     virtual float get_loading(void);
     virtual ACC_RESULT programmable_bootstrap(Session_ID_t sessionID,const shared_ptr<LweSample> in_sample, int32_t * function_table, const int32_t table_size, shared_ptr<LweSample> result);
@@ -137,6 +140,7 @@ public:
 
     static constexpr uint32_t REG_VERSION_ID_Addr = 0x00003300; // 所有的硬件版本都有这个寄存器
     static size_t get_CPU_exector_num(void);
+    static std::shared_ptr<TFHE_ACC> get_valid_acc(void);
 
 protected:
     bool paral_mul = false;
@@ -228,19 +232,24 @@ public:
     virtual ACC_RESULT programmable_bootstrap(Session_ID_t sessionID,const shared_ptr<LweSample> in_sample, int32_t * function_table, const int32_t table_size, shared_ptr<LweSample> result);
     virtual void torusPolynomialMultNaive_aux(Torus32* __restrict result, const int32_t* __restrict poly1, const Torus32* __restrict poly2, const int32_t N);
     virtual void torusPolynomialAddMulR(TorusPolynomial* result, const IntPolynomial* poly1, const TorusPolynomial* poly2);
+    void torusPolynomialAddMulR_async(TorusPolynomial* result, const IntPolynomial* poly1, const TorusPolynomial* poly2);
+    virtual void tLweAddMulRTo_paral(TLweSample *result, const IntPolynomial *p, const TLweSample *sample, const TLweParams *params);
+    virtual void tGswExternMulToTLwe_paral(TLweSample *accum, const TGswSample *sample, const TGswParams *params);
 
-    ACC_RESULT torusPolynomialMultFPGA(Torus32* __restrict result, const Torus32* __restrict poly1, const Torus32* __restrict poly2,uint8_t executor, bool poll=false);
+    ACC_RESULT torusPolynomialMultFPGA(Torus32* __restrict result, const Torus32* __restrict poly1, const Torus32* __restrict poly2,uint8_t channel, bool poll=false);
 
     ACC_RESULT init(const char * config_dev = XDMA_CONTROL_DEV, const char * user_dev =  XDMA_USER_DEV, const char * h2c_dev = XDMA_H2C_DEV, const char * c2h_dev = XDMA_C2H_DEV);
     void deinit(void);
-    ACC_RESULT start(uint8_t executor = 0);
-    ACC_RESULT clear_start(uint8_t executor = 0);
+    ACC_RESULT start(uint8_t channel = 0);
+    ACC_RESULT clear_start(uint8_t channel = 0);
     ACC_RESULT enableInterrupt(bool en);
-    ACC_RESULT clearInterrupt(uint8_t executor = 0);
-    ACC_RESULT exec_non_interrupt(struct timespec *ts_dur = nullptr,uint8_t executor = 0);
-    ACC_RESULT exec_interrupt(struct timespec *ts_dur = nullptr,uint8_t executor = 0);
+    ACC_RESULT clearInterrupt(uint8_t channel = 0);
+    ACC_RESULT exec_non_interrupt(struct timespec *ts_dur = nullptr,uint8_t channel = 0);
+    ACC_RESULT exec_interrupt(struct timespec *ts_dur = nullptr,uint8_t channel = 0);
     static const uint32_t N = 1024;
 
+    shared_ptr<Executor>  aquire_executor(void);
+    void release_executor(shared_ptr<Executor> exec);
     bool wait_event_timeout(void);
 
     int get_full_coef(Torus32 * out_buffer,uint64_t address );
@@ -322,7 +331,7 @@ public:
     static const uint64_t FULL_V_START_ADDR_7 = 0x00072000;
 
 
-    static const uint8_t TOTAL_MUL_EXECULTORS = 4;
+    static const uint8_t TOTAL_MUL_CHANNELS = 8;
     static constexpr const uint8_t Polynomial_Mul_Start_Offsets[] = {
         Polynomial_Mul_Start_Offset_0,
         Polynomial_Mul_Start_Offset_1,
@@ -392,9 +401,12 @@ public:
 
 
 protected:
+    inline void __write_word_mask_lite_list(uint32_t *address, uint32_t *value, uint32_t *mask,size_t count);
     inline void __write_word_mask_lite(uint32_t address, uint32_t value, uint32_t mask);
-    inline void __read_word_lite(uint32_t address, uint32_t & value);
+    inline void __read_word_lite(uint32_t address, volatile uint32_t & value);
     inline void __write_word_lite(uint32_t address, uint32_t value);
+    inline uint32_t __save_read_word_lite(uint32_t address);
+    inline void __save_write_word_lite(uint32_t address, uint32_t value);
 
 
 
@@ -406,11 +418,13 @@ private:
 
     int user_fp = 0;
     void * user_map_base = nullptr;
+    atomic_flag user_automic_flag;  // 访问寄存器的时间短，而且没有休眠，所以用atomic_flag，效率比较高
 
     int h2c_fp = 0;
     int c2h_fp = 0;
+    mutex full_dma_mtx;
 
-    
+    Executor_List executors;
 
 };
 

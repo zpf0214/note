@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 #include "tfhe.h"
+#include "test_internal.h"
+
 #include "fakes/tlwe.h"
 #include "fakes/tgsw.h"
 #include "fakes/lwe-keyswitch.h"
@@ -376,6 +378,7 @@ namespace {
         fake_delete_LweSample(insample);
         fake_delete_LweSample(result);
     }
+
 
     class TfheCreateBootstrapKeyTest : public ::testing::Test {
     public:

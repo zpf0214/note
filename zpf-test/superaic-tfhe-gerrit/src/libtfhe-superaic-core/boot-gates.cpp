@@ -24,6 +24,13 @@ using namespace std;
 // zones on the torus -> to see
 //*//*****************************************
 
+// TODO 以后要换成智能指针
+LweSample* new_LweSample(const LweParams* params);
+void delete_LweSample(LweSample* obj);
+
+TLweSample *new_TLweSample(const TLweParams *params);
+EXPORT void delete_TLweSample(TLweSample *obj);
+
 
 /*
  * Homomorphic bootstrapped NAND gate

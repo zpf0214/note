@@ -6,6 +6,7 @@
 #include "tfhe_package.h"
 
 #include "tfhe_superaic_server.h"
+#include "test_internal.h"
 
 using namespace std;
 using namespace tfhe_superaic;
@@ -111,24 +112,24 @@ public:
         TorusPolynomial_ifft(tmp+1,poly2);
         clock_gettime(CLOCK_MONOTONIC, &ts_end);
         TFHE_ACC::timespec_sub(ts_end,ts_start,ts_dur);
-        printf("\tTorusPolynomial_ifft done! dur: %ld.%09ld\n",ts_dur.tv_sec,ts_dur.tv_nsec);
+        //printf("\tTorusPolynomial_ifft done! dur: %ld.%09ld\n",ts_dur.tv_sec,ts_dur.tv_nsec);
 
         clock_gettime(CLOCK_MONOTONIC, &ts_start);
         LagrangeHalfCPolynomialMul(tmp+2,tmp+0,tmp+1);
         clock_gettime(CLOCK_MONOTONIC, &ts_end);
         TFHE_ACC::timespec_sub(ts_end,ts_start,ts_dur);
-        printf("\tLagrangeHalfCPolynomialMul done! dur: %ld.%09ld\n",ts_dur.tv_sec,ts_dur.tv_nsec);
+        //printf("\tLagrangeHalfCPolynomialMul done! dur: %ld.%09ld\n",ts_dur.tv_sec,ts_dur.tv_nsec);
 
         clock_gettime(CLOCK_MONOTONIC, &ts_start);
         TorusPolynomial_fft(result, tmp+2);
         clock_gettime(CLOCK_MONOTONIC, &ts_end);
         TFHE_ACC::timespec_sub(ts_end,ts_start,ts_dur);
-        printf("\tTorusPolynomial_fft done! dur: %ld.%09ld\n",ts_dur.tv_sec,ts_dur.tv_nsec);
+        //printf("\tTorusPolynomial_fft done! dur: %ld.%09ld\n",ts_dur.tv_sec,ts_dur.tv_nsec);
 
 
         clock_gettime(CLOCK_MONOTONIC, &ts_end_total);
         TFHE_ACC::timespec_sub(ts_end_total,ts_start_total,ts_dur_total);
-        printf("torusPolynomialMultFFT done! dur: %ld.%09ld\n\n",ts_dur_total.tv_sec,ts_dur_total.tv_nsec);
+        //printf("torusPolynomialMultFFT done! dur: %ld.%09ld\n\n",ts_dur_total.tv_sec,ts_dur_total.tv_nsec);
 
         delete_LagrangeHalfCPolynomial_array(3,tmp);
     };
@@ -238,7 +239,7 @@ public:
         delete_LweBootstrappingKey(bk3);
 
     }
-
+#endif
 
     int32_t f(int32_t n, int32_t plaintext_modulus){
         return n*n % plaintext_modulus;
@@ -247,6 +248,7 @@ public:
     LweSample *real_new_LweSample(const LweParams *params) {
         return new_LweSample(params);
     }
+
 #if 1
     TEST_F(ACCTest, FPGA_ACC_bootstrappingTest) {
         bool _use_fix_random_bak = _use_fix_random;
@@ -337,7 +339,9 @@ public:
         delete_LweParams(in_params);
         _use_fix_random = _use_fix_random_bak;
     }
+#endif
 
+#if 1
     TEST_F(ACCTest, get_FPGA_version) {
         uint32_t version = 0;
         if(!get_FPGA_version(TFHE_ACC::XDMA_USER_DEV,version)){
@@ -347,7 +351,6 @@ public:
         printf("FPGA Version is 0x%x\n",version);
         ASSERT_TRUE(FPGA_ACC_V0::match(version));
     }
-#endif
 
     TEST_F(ACCTest, FPGA_init) {
         FPGA_ACC_V0 acc;
@@ -394,83 +397,97 @@ public:
             ASSERT_EQ(a[i],b[i]);
         }
     }
+#endif
 
+#if 1
 
     TEST_F(ACCTest, FPGA_exec_none_interrupt) {
         FPGA_ACC_V0 acc;
         ASSERT_EQ(acc.init(),ACC_OK);
+        for(int round = 0; round < 255; round ++) {
+            for(int channel = 0; channel < FPGA_ACC_V0::TOTAL_MUL_CHANNELS; ++ channel) {
 
-        IntPolynomial p(1024);
-        TorusPolynomial q(1024);
-        TorusPolynomial v2(1024);
-        TorusPolynomial v2_fft(1024);
+                IntPolynomial p(1024);
+                TorusPolynomial q(1024);
+                TorusPolynomial v2(1024);
+                TorusPolynomial v2_fft(1024);
 
-        for( int i=0;i<1024;i++){
-            p.coefs[i] = i;
-            q.coefsT[i] = 2000 + i;
-        }
+                for( int i=0;i<1024;i++){
+                    p.coefs[i] = i + round*13;
+                    q.coefsT[i] = 2000 + i;
+                }
 
-        acc.set_full_coef(p.coefs,FPGA_ACC_V0::FULL_P_START_ADDR_0);
-        acc.set_full_coef(q.coefsT,FPGA_ACC_V0::FULL_Q_START_ADDR_0);
-        struct timespec ts_start, ts_end, ts_dur;
-        ASSERT_EQ(acc.exec_non_interrupt(&ts_dur),ACC_OK);
-        printf("exec_non_interrupt done! dur: %ld.%09ld\n",ts_dur.tv_sec,ts_dur.tv_nsec);
-        acc.get_full_coef(read_v_non_interrupt,FPGA_ACC_V0::FULL_V_START_ADDR_0);
+                acc.set_full_coef(p.coefs,FPGA_ACC_V0::FULL_P_START_ADDRs[channel]);
+                acc.set_full_coef(q.coefsT,FPGA_ACC_V0::FULL_Q_START_ADDRs[channel]);
+                struct timespec ts_start, ts_end, ts_dur;
+                ASSERT_EQ(acc.exec_non_interrupt(&ts_dur, channel),ACC_OK);
+                //printf("exec_non_interrupt done! dur: %ld.%09ld\n",ts_dur.tv_sec,ts_dur.tv_nsec);
+                acc.get_full_coef(read_v_non_interrupt,FPGA_ACC_V0::FULL_V_START_ADDRs[channel]);
 
-        clock_gettime(CLOCK_MONOTONIC, &ts_start);
-        torusPolynomialMultNaive(&v2,&p,&q);
-        clock_gettime(CLOCK_MONOTONIC, &ts_end);
-        TFHE_ACC::timespec_sub(ts_end,ts_start,ts_dur);
-        printf("torusPolynomialMultNaive_aux done! dur: %ld.%09ld\n",ts_dur.tv_sec,ts_dur.tv_nsec);
-        for (int i = 0;i < 1024;i++) {
-            ASSERT_EQ(v2.coefsT[i],read_v_non_interrupt[i]);
-        }
+                clock_gettime(CLOCK_MONOTONIC, &ts_start);
+                torusPolynomialMultNaive(&v2,&p,&q);
+                clock_gettime(CLOCK_MONOTONIC, &ts_end);
+                TFHE_ACC::timespec_sub(ts_end,ts_start,ts_dur);
+                //printf("torusPolynomialMultNaive_aux done! dur: %ld.%09ld\n",ts_dur.tv_sec,ts_dur.tv_nsec);
+                for (int i = 0;i < 1024;i++) {
+                    ASSERT_EQ(v2.coefsT[i],read_v_non_interrupt[i]);
+                }
 
-        torusPolynomialMultFFT(&v2_fft,&p,&q);
-        // FFT计算有误差，在误差范围内就可以
-        for (int i = 0;i < 1024;i++) {
-            ASSERT_LE(abs(v2_fft.coefsT[i] - read_v_non_interrupt[i]) ,1000);
+                torusPolynomialMultFFT(&v2_fft,&p,&q);
+                // FFT计算有误差，在误差范围内就可以
+                for (int i = 0;i < 1024;i++) {
+                    ASSERT_LE(abs(v2_fft.coefsT[i] - read_v_non_interrupt[i]) ,1000);
+                }
+            }
+
         }
     }
+#endif
 
+#if 1
 
     TEST_F(ACCTest, FPGA_exec_interrupt) {
         FPGA_ACC_V0 acc;
         ASSERT_EQ(acc.init(),ACC_OK);
+        for(int round = 0 ; round < 255; round ++) {
+            for (int channel = 0 ; channel < FPGA_ACC_V0::TOTAL_MUL_CHANNELS; ++ channel) {
 
-        Torus32 p[1024] ;
-        Torus32 q[1024] ;
+                Torus32 p[1024] ;
+                Torus32 q[1024] ;
 
-        Torus32 read_v[1024] ;
-        Torus32 v2[1024] ;
+                Torus32 read_v[1024] ;
+                Torus32 v2[1024] ;
 
-        for( int i=0;i<1024;i++){
-            p[i] = 100 + i;
-            q[i] = 2000 + i;
-        }
-        struct timespec ts_start, ts_end, ts_dur;
+                for( int i=0;i<1024;i++){
+                    p[i] = 100 + i + round * 13 + channel;
+                    q[i] = 2000 + i;
+                }
+                struct timespec ts_start, ts_end, ts_dur;
 
-        acc.clearInterrupt();
-        acc.set_full_coef(p,FPGA_ACC_V0::FULL_P_START_ADDR_0);
-//        printf("wait_event_timeout return %d\n",acc.wait_event_timeout());
-//        return;
-        acc.set_full_coef(q,FPGA_ACC_V0::FULL_Q_START_ADDR_0);
-        ASSERT_EQ(acc.exec_interrupt(&ts_dur),ACC_OK);
-        printf("exec_interrupt done! dur: %ld.%09ld\n",ts_dur.tv_sec,ts_dur.tv_nsec);
+                acc.clearInterrupt();
+                acc.set_full_coef(p,FPGA_ACC_V0::FULL_P_START_ADDRs[channel]);
+        //        printf("wait_event_timeout return %d\n",acc.wait_event_timeout());
+        //        return;
+                acc.set_full_coef(q,FPGA_ACC_V0::FULL_Q_START_ADDRs[channel]);
+                ASSERT_EQ(acc.exec_interrupt(&ts_dur,channel),ACC_OK);
+                //printf("exec_interrupt done! dur: %ld.%09ld\n",ts_dur.tv_sec,ts_dur.tv_nsec);
 
-        acc.get_full_coef(read_v,FPGA_ACC_V0::FULL_V_START_ADDR_0);
+                acc.get_full_coef(read_v,FPGA_ACC_V0::FULL_V_START_ADDRs[channel]);
 
-        clock_gettime(CLOCK_MONOTONIC, &ts_start);
-        torusPolynomialMultNaive_aux(v2,p,q,1024);
-        clock_gettime(CLOCK_MONOTONIC, &ts_end);
-        TFHE_ACC::timespec_sub(ts_end,ts_start,ts_dur);
-        printf("torusPolynomialMultNaive_aux done! dur: %ld.%09ld\n",ts_dur.tv_sec,ts_dur.tv_nsec);
-        for (int i = 0;i < 1024;i++) {
-            //printf("i=%d\n",i);
-            if(v2[i] != read_v[i]) {
-                printf("v2[%d]: %d, read_v[%d]:%d, read_v_non_interrupt[%d]:%d\n", i,v2[i],i,read_v[i],i,read_v_non_interrupt[i]);
+                clock_gettime(CLOCK_MONOTONIC, &ts_start);
+                torusPolynomialMultNaive_aux(v2,p,q,1024);
+                clock_gettime(CLOCK_MONOTONIC, &ts_end);
+                TFHE_ACC::timespec_sub(ts_end,ts_start,ts_dur);
+                //printf("torusPolynomialMultNaive_aux done! dur: %ld.%09ld\n",ts_dur.tv_sec,ts_dur.tv_nsec);
+                for (int i = 0;i < 1024;i++) {
+                    //printf("i=%d\n",i);
+                    if(v2[i] != read_v[i]) {
+                        printf("v2[%d]: %d, read_v[%d]:%d, read_v_non_interrupt[%d]:%d\n", i,v2[i],i,read_v[i],i,read_v_non_interrupt[i]);
+                    }
+                    ASSERT_EQ(v2[i],read_v[i]);
+                }
+
             }
-            ASSERT_EQ(v2[i],read_v[i]);
         }
     }
 
@@ -483,7 +500,7 @@ public:
         auto exec = list.aquire_executor();
         printf("Get exec:%s for %d + %d\n",exec->name.c_str(),a,b);
         *result = a + b;
-        sleep(1);
+        usleep(100);
         printf("Release exec:%s for %d + %d\n",exec->name.c_str(),a,b);
         list.release_executor(exec);
         return 0;
@@ -496,29 +513,30 @@ public:
         list.append_exector(shared_ptr<Executor>(new Executor(Executor::Executor_CPU,string("cpu1"))));
         list.append_exector(shared_ptr<Executor>(new Executor(Executor::Executor_CPU,string("cpu2"))));
         list.append_exector(shared_ptr<Executor>(new Executor(Executor::Executor_CPU,string("cpu3"))));
-
-        int a[10],b[10],result[10];
-        std::future<int> rt[10];
-        for(int i=0;i<10;i++){
+        const int total_task = 100;
+        int a[total_task],b[total_task],result[total_task];
+        std::future<int> rt[total_task];
+        for(int i=0;i<total_task;i++){
             a[i] = i;
             b[i] = 100+i;
             result[i] = 0;
         }
 
-        for(int i=0;i<10;i++){
+        for(int i=0;i<total_task;i++){
             rt[i] = async(launch::async,add_and_sleep,std::ref(list),a[i],b[i],&result[i]);
         }
 
-        for(int i= 0;i<10;i++) {
+        for(int i= 0;i<total_task;i++) {
             rt[i].get();
             ASSERT_EQ(result[i],a[i]+b[i]);
         }
+        printf("exector_async done\n");
     }
 
 #endif
-#if 1
 
-    TEST_F(ACCTest, FPGA_exec_poll_executors) {
+#if 1
+    TEST_F(ACCTest, FPGA_exec_poll_mul) {
         FPGA_ACC_V0 acc;
         ASSERT_EQ(acc.init(),ACC_OK);
 
@@ -528,17 +546,17 @@ public:
         Torus32 read_v[1024] ;
         Torus32 v2[1024] ;
 
-        for (int exec = 0 ; exec < acc.TOTAL_MUL_EXECULTORS ; exec++) 
+        for (int channel = 0 ; channel < acc.TOTAL_MUL_CHANNELS  * 100 ; channel++) 
         //int exec = 7;
         {
             for( int i=0;i<1024;i++){
-                p[i] = 100 + i + exec *13;
+                p[i] = 100 + i + channel *13;
                 q[i] = 2000 + i;
             }
             struct timespec ts_start, ts_end, ts_dur;
 
-            printf("exec = %d\n",exec);
-            ASSERT_EQ(acc.torusPolynomialMultFPGA(read_v,p,q,exec,true),ACC_OK);
+            printf("channel = %d\n",channel % acc.TOTAL_MUL_CHANNELS);
+            ASSERT_EQ(acc.torusPolynomialMultFPGA(read_v,p,q,channel % acc.TOTAL_MUL_CHANNELS,true),ACC_OK);
 
             clock_gettime(CLOCK_MONOTONIC, &ts_start);
             torusPolynomialMultNaive_aux(v2,p,q,1024);
@@ -546,9 +564,9 @@ public:
             TFHE_ACC::timespec_sub(ts_end,ts_start,ts_dur);
             for (int i = 0;i < 1024;i++) {
                 //printf("i=%d\n",i);
-                if((v2[i] != read_v[i] && i == 0) || i == 0) {
-                    printf("v2[%d]: 0x08%x, read_v[%d]:0x08%x \n", i,v2[i],i,read_v[i]);
-                }
+                // if((v2[i] != read_v[i] && i == 0) || i == 0) {
+                //     printf("v2[%d]: 0x08%x, read_v[%d]:0x08%x \n", i,v2[i],i,read_v[i]);
+                // }
                 ASSERT_EQ(v2[i],read_v[i]);
             }
         }
@@ -556,7 +574,7 @@ public:
 #endif
 
 #if 1
-    TEST_F(ACCTest, FPGA_exec_interrupt_executors) {
+    TEST_F(ACCTest, FPGA_exec_interrupt_mul) {
         FPGA_ACC_V0 acc;
         ASSERT_EQ(acc.init(),ACC_OK);
 
@@ -565,18 +583,18 @@ public:
 
         Torus32 read_v[1024] ;
         Torus32 v2[1024] ;
-
-        for (int exec = 0 ; exec < acc.TOTAL_MUL_EXECULTORS ; exec++) 
+        for(int round = 0 ; round < 255; round ++)
+        for (int channel = 0 ; channel < acc.TOTAL_MUL_CHANNELS ; channel++) 
         //int exec = 1;
         {
             for( int i=0;i<1024;i++){
-                p[i] = 100 + i + exec *19;
+                p[i] = 100 + i + channel *19 + round;
                 q[i] = 2000 + i;
             }
             struct timespec ts_start, ts_end, ts_dur;
 
-            printf("exec = %d\n",exec);
-            ASSERT_EQ(acc.torusPolynomialMultFPGA(read_v,p,q,exec,false),ACC_OK);
+            //printf("channel = %d\n",channel);
+            ASSERT_EQ(acc.torusPolynomialMultFPGA(read_v,p,q,channel,false),ACC_OK);
 
             clock_gettime(CLOCK_MONOTONIC, &ts_start);
             torusPolynomialMultNaive_aux(v2,p,q,1024);
@@ -593,5 +611,82 @@ public:
     }
 
 #endif
+
+    void mul_one_channel_interrupt(FPGA_ACC_V0 *acc,Torus32 * p, Torus32 * q, Torus32 * v) {
+        shared_ptr<Executor> exec = acc->aquire_executor();
+        printf("Get exec:%s \n",exec->name.c_str());
+        shared_ptr<Executor_FPGA> exec_FPGA = dynamic_pointer_cast<Executor_FPGA> (exec);
+        if( exec_FPGA ) { // 可能是其他类型的executor，这里要作判读
+            ASSERT_EQ(acc->torusPolynomialMultFPGA(v,p,q,exec_FPGA->channel,false),ACC_OK);
+        }
+        printf("Release exec:%s \n",exec->name.c_str());
+        acc->release_executor(exec);
+    }
+
+    void mul_one_channel_poll(FPGA_ACC_V0 *acc,Torus32 * p, Torus32 * q, Torus32 * v) {
+        shared_ptr<Executor> exec = acc->aquire_executor();
+        printf("Get exec:%s \n",exec->name.c_str());
+        shared_ptr<Executor_FPGA> exec_FPGA = dynamic_pointer_cast<Executor_FPGA> (exec);
+        if( exec_FPGA ) { // 可能是其他类型的executor，这里要作判读
+            ASSERT_EQ(acc->torusPolynomialMultFPGA(v,p,q,exec_FPGA->channel,true),ACC_OK);
+        }
+        printf("Release exec:%s \n",exec->name.c_str());
+        acc->release_executor(exec);
+    }
+
+
+#if 1
+
+    TEST_F(ACCTest, FPGA_exec_interrupt_executors_paral) {
+        FPGA_ACC_V0 acc;
+        ASSERT_EQ(acc.init(),ACC_OK);
+        const int TOTAL_ITEM = FPGA_ACC_V0::TOTAL_MUL_CHANNELS * 5 ;
+        Torus32 p_array[TOTAL_ITEM][1024] ;
+        Torus32 q_array[TOTAL_ITEM][1024] ;
+
+        Torus32 read_v_array[TOTAL_ITEM][1024] ;
+        Torus32 v2_array[TOTAL_ITEM][1024] ;
+        for(int round = 0; round < 255; round ++) {
+            printf("round = %d\n",round);
+            for (int index = 0; index < TOTAL_ITEM; ++ index) {
+                Torus32 * p = p_array[index];
+                Torus32 * q = q_array[index];
+                Torus32 * v2 = v2_array[index];
+                for( int i=0;i<1024;i++){
+                    p[i] = 100 + i + index *19;
+                    q[i] = 2000 + i + round * 13;
+                }
+                torusPolynomialMultNaive_aux(v2,p,q,1024);
+            }
+
+            future<void> rt[TOTAL_ITEM];
+            for( int index = 0 ;index < TOTAL_ITEM; ++ index) {
+                rt[index] = async(launch::async,mul_one_channel_interrupt,&acc,p_array[index],q_array[index],read_v_array[index]);
+            }
+
+            for( int index = 0 ;index < TOTAL_ITEM; ++ index) {
+                rt[index].get();
+            }
+
+            for( int  item_index= 0 ;item_index < TOTAL_ITEM; ++ item_index) {
+                for( int i = 0;i<1024;i++) {
+                    if(read_v_array[item_index][i] !=  v2_array[item_index][i]) {
+                        printf("missed at [%d][%d]\n",item_index,i);
+                    }
+                    ASSERT_EQ(read_v_array[item_index][i], v2_array[item_index][i]);
+                }
+            }
+
+            printf("round = %d done\n",round);
+
+        }
+
+    }
+#endif        
+    TEST_F(ACCTest, get_valid_acc_test){
+        std::shared_ptr<TFHE_ACC> acc = TFHE_ACC::get_valid_acc();
+        ASSERT_TRUE(std::dynamic_pointer_cast<FPGA_ACC_V0>(acc));
+    }
+
 
 }

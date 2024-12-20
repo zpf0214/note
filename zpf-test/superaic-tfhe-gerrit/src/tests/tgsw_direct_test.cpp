@@ -12,6 +12,7 @@
 // #include <numeric_functions.h>
 #include <polynomials_arithmetic.h>
 #include <lagrangehalfc_arithmetic.h>
+#include "test_internal.h"
 
 #define TFHE_TEST_ENVIRONMENT 1
 #define plaintext_modulus 2

@@ -6,6 +6,17 @@
 
 using namespace std;
 
+// TODO 以后要换成智能指针
+LweParams* new_LweParams(int32_t n, int32_t plaintext_modulus, double alpha_min, double alpha_max);
+EXPORT void delete_LweParams(LweParams* obj);
+
+TLweParams *new_TLweParams(int32_t N, int32_t k, int32_t plaintext_modulus, double alpha_min, double alpha_max);
+EXPORT void delete_TLweParams(TLweParams *obj);
+
+TGswParams *new_TGswParams(int32_t l, int32_t Bgbit, const TLweParams *tlwe_params);
+EXPORT void delete_TGswParams(TGswParams *obj);
+
+
 /**
  * this class implements a simple garbage collector for simple parameter pointers
  */

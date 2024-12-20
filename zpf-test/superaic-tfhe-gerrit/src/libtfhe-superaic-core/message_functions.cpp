@@ -1,10 +1,18 @@
 #include<cmath>
+#include<functional>
 #include<iostream>
 #include<cassert>
 #include "tfhe.h"
 #include "message_functions.h"
 
 using namespace std;
+
+// TODO 以后要换成智能指针版本
+LweSample* new_LweSample(const LweParams* params);
+void delete_LweSample(LweSample* obj);
+
+TLweSample *new_TLweSample(const TLweParams *params);
+EXPORT void delete_TLweSample(TLweSample *obj);
 
 /*
  * 根据message modulu 大小和plaintext大小决定blocks数量
@@ -91,8 +99,9 @@ EXPORT void apply_lookup_table(
         const LweBootstrappingKey *bk,
         const LweSample *x,
         const int32_t plaintext_modulus,
-        int32_t (*fp)(int32_t) //zpf 用std::function可以更有扩展性，
+        //int32_t (*fp)(int32_t) //zpf 用std::function可以更有扩展性，
                                //比如可以将函数curry化
+        std::function<int32_t(int32_t)> fp
         ){
             // generate lookup table
             int32_t truth_table[plaintext_modulus];
@@ -115,7 +124,7 @@ EXPORT void apply_lookup_table(
  *      2. 新建一个类，将lwekey bsk放到类里
  *          然后在析构函数中释放
  */
-void encrypt_with_private_key(
+EXPORT void encrypt_with_private_key(
         LweSample** lwe_cipher_result, //zpf [*lwe_ciphe, ...]
         int32_t message,
         const int32_t message_modulus, 
@@ -150,7 +159,7 @@ void encrypt_with_private_key(
 
 //zpf decrypt with private key
 //TODO key使用智能指针进行管理，避免手动释放
-int32_t decrypt_with_private_key(
+EXPORT int32_t decrypt_with_private_key(
         LweSample** lwe_cipher_blocks,
         const int32_t message_modulus,
         const int32_t plaintext_modulus,
@@ -168,12 +177,12 @@ int32_t decrypt_with_private_key(
             message_blocks[i] = modSwitchFromTorus32(decrypt_blocks[i], plaintext_modulus);
         }
 
-        {//zpf print for debug
+        {//zpf print for debug TODO 以后可以添加条件编译
 
-            for(int i=0; i<num_block; i++){
-                cout << message_blocks[i] << ", ";
-            }
-            cout << "message_after_decrypt in function decrypt_with_private_key" << endl;
+        //    for(int i=0; i<num_block; i++){
+        //        cout << message_blocks[i] << ", ";
+        //    }
+        //    cout << "message_after_decrypt in function decrypt_with_private_key" << endl;
         }//zpf print for debug
         
         int32_t message_after_decrypt = block_recomposer(message_blocks, message_modulus, num_block);
@@ -184,13 +193,13 @@ int32_t decrypt_with_private_key(
 
 //zpf 最终的encrypt函数应该只需要message和key
 //裸指针内存风险比较大，后续需要考虑使用智能指针
-LweSample** encrypt_lwe(
+EXPORT LweSample** encrypt_lwe(
         int32_t message,
         const int32_t message_modulus,
         const int32_t plaintext_modulus,
         const int32_t num_block,
         const LweKey *key, //zpf in heap
-        const LweParams *lwe_params,
+        const LweParams *lwe_params, // LweKey 中包含该参数，所以该函数事实上可以省略
         const double alpha
         ){
             LweSample** lwe_cipher_blocks = new LweSample*[num_block];
@@ -207,10 +216,138 @@ LweSample** encrypt_lwe(
             return lwe_cipher_blocks; //局部变量指针不可以作为返回值，除非值是new出来的
 }
 
-void cleanup_LweSample_blocks(LweSample** blocks, int32_t num_block){
+EXPORT void cleanup_LweSample_blocks(LweSample** blocks, int32_t num_block){
     for (int i=0; i<num_block; i++){
         delete_LweSample(blocks[i]);
     }
     delete[] blocks;
+}
+
+
+
+    /*zpf
+     * 这里似乎还是没有考虑清楚，如果我们不知道前一个的匹配结果
+     * 如何知道后面应该如何匹配？
+     * 例如用 ab 去匹配 abcde，因为我们只有在解密之后才知道
+     * 匹配结果如何，所以
+     * 我们就需要把abcde 按照 ab bc cd de 全部都匹配一遍
+     * 然后解密的时候判断是否有成功匹配到的值
+     * 即，即使我们一开始就已经匹配到了结果，整个过程
+     * 可以结束了，但是由于我们不知道已经匹配到了，所以
+     * 我们需要穷尽所有可能
+     */
+EXPORT void Lwecipher_message_eq(
+        LweSample** lwe_mess_match,
+        LweSample** lwe_cipher_blocks,
+        LweBootstrappingKey *bk,
+        int32_t message,
+        int32_t message_modulus,
+        int32_t plaintext_modulus,
+        int32_t num_block)
+{
+    int32_t message_decomposer_result[num_block];
+    block_decomposer(message_decomposer_result, message, message_modulus, num_block);
+    for(int i=0; i<num_block; i++){
+        auto message_decomposer_bits = message_decomposer_result[i];
+        apply_lookup_table(lwe_mess_match[i], bk, lwe_cipher_blocks[i], plaintext_modulus, 
+                [message_decomposer_bits](int32_t x)->int32_t{
+                    return x == message_decomposer_bits;
+                });
+    }
+}
+
+
+void encrypt_str_with_private_key(vector<LweSample**> &lwe_cipher_list, //zpf vector的话可以使用 & 语义避免copy
+        const string str, const int32_t message_modulus, const int32_t plaintext_modulus, 
+        const int32_t num_block, const LweParams* extract_params, const LweKey *key, double alpha)
+{
+    vector<int32_t> str_list;
+    {
+        for(char ch: str){
+            str_list.push_back(static_cast<int32_t>(ch)); //zpf or emplace_back
+                                                          //其实这一步也并不需要，或者可以推迟到encrypt的时候
+        }
+    }
+
+    {
+        auto str_list_len = str_list.size();
+        for(int i=0; i<str_list_len; i++){
+            encrypt_with_private_key(lwe_cipher_list[i], str_list[i], message_modulus, plaintext_modulus, num_block, key, alpha);
+        }
+    }
+
+}
+
+
+string decrypt_str_with_private_key(vector<LweSample**> &lwe_cipher_list,
+        const int32_t message_modulus, const int32_t plaintext_modulus,
+        const int32_t num_block, const LweKey* key) //zpf key has included plaintext_modulus
+{
+    string s_after_decrypt = "";
+    for(auto lwe_cipher_blocks: lwe_cipher_list){
+        int32_t message_after_decrypt = decrypt_with_private_key(lwe_cipher_blocks, message_modulus, plaintext_modulus, num_block, key);
+        //cout << "message_after_decrypt in func decrypt_str_with_private_key: " << message_after_decrypt << endl;
+        s_after_decrypt.push_back(static_cast<char>(message_after_decrypt));
+    }
+        
+    //cout << "s_after_decrypt: " << s_after_decrypt << " in func decrypt_str_with_private_key" << endl;
+    return s_after_decrypt;
+}
+
+
+
+vector<LweSample**> encrypt_str(const string &s, const LweKey* lwe_key)
+{
+    const int32_t message_modulus = 4; //TODO zpf 这个应该放到LweParams中
+    const int32_t num_block = 16; //TODO zpf 这里以后可以通过sizeof(T)获得
+
+    const LweParams* extract_params = lwe_key -> params;
+    const int32_t plaintext_modulus = extract_params -> plaintext_modulus;
+    double alpha = extract_params -> alpha_min;
+
+    vector<LweSample**> lwe_cipher_list;
+    {   //zpf lwe_cipher_list 初始化
+        //zpf lwe_cipher_list 初始化
+        for(auto _: s){
+            LweSample** lwe_cipher_blocks = new LweSample*[num_block];
+            for(int i=0; i<num_block; i++){
+                lwe_cipher_blocks[i] = new_LweSample(extract_params);
+            }
+            lwe_cipher_list.push_back(lwe_cipher_blocks);
+        }
+
+    }   //zpf lwe_cipher_list 初始化
+
+    encrypt_str_with_private_key(lwe_cipher_list, s, message_modulus, plaintext_modulus, num_block, extract_params, lwe_key, alpha);
+
+    return lwe_cipher_list; //TODO in heap
+}
+
+
+// zpf  encrypt_str 返回的值目前(2024年12月20日)是分配在堆上的，这个值的生命
+// 周期一直跟随到程序结束(因为我们还要decrypt) 所以这里可以使用std::atexit 注册该函数
+// 后续提供智能指针版本则不需要再考虑这个问题
+void clean_up(vector<LweSample**> lwe_cipher_list, const int32_t num_block)
+{ //zpf clean up
+    for (auto lwe_cipher_blocks: lwe_cipher_list){
+        for(int i=0; i<num_block; i++){
+            delete lwe_cipher_blocks[i];
+        }
+        delete[] lwe_cipher_blocks;
+    }
+}
+
+
+
+string decrypt_str(vector<LweSample**> &str_cipher, const LweKey* lwe_key)
+{
+   const int32_t message_modulus = 4; //zpf TODO should be included in LweParams
+   const int32_t num_block = 16; // get by sizeof(T)
+
+   const int32_t plaintext_modulus = lwe_key -> params -> plaintext_modulus;
+
+   string s_after_decrypt = decrypt_str_with_private_key(str_cipher, message_modulus, plaintext_modulus, num_block, lwe_key);
+
+   return s_after_decrypt;
 }
 

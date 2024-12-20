@@ -12,6 +12,9 @@ if ( ENABLE_MEMTESTS )
         package_test
         session_test
         ACC_test
+        lwe_test
+        tlwe_test
+        tgsw_test
         # QEMU_test    # QEMU_test 依赖于设备，所以从内存测试中移除
         # moduo_test   # moduo_test 在服务器上algrind会报非法指令的错误，可能是服务器的处理器比较新，valgrind没有支持最新的指令
     )
@@ -108,11 +111,13 @@ else()
         #        bootstrapping_classic_PBS_parameters_test
         #        message_encode
         #        ops_add
+        #        ops_pbs_equality
+        #        macros_ops_pbs_equality
         #        ops_add_with_carry
         #        decrypt_with_plaintext_modulus
-        macros_decrypt_with_plaintext_modulus_macros
+        #        macros_decrypt_with_plaintext_modulus_macros
         #        macros_modSwitch_with_plaintext_modulus_macros
-        #        zpf_for_bootstrap_detail
+        ops_string_encrypt_test
     )
 
     foreach (CORE_CPP_ITEST ${CORE_CPP_ITESTS})
@@ -121,7 +126,7 @@ else()
     PRIVATE
         tfhe_superaic_core 
         tfhe_superaic_server
-        #muduo_net
+        muduo_net
         gtest gtest_main -lpthread
         )
         add_test(

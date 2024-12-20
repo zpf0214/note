@@ -4,6 +4,7 @@
 #include <cmath>
 #include <tfhe.h>
 #include <polynomials.h>
+#include "test_internal.h"
 
 using namespace std;
 

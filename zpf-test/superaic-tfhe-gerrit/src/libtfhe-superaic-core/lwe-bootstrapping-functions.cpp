@@ -11,6 +11,16 @@ using namespace std;
 #define EXPORT
 #endif
 
+// TODO 以后要换成智能指针
+// test case 中使用了fakexxx，并且直接编译了这个文件
+#ifndef TFHE_TEST_ENVIRONMENT 
+// 直接在tfhe_blindRotate里面使用智能指针来代替裸指针可能会导致testcase错误
+LweSample* new_LweSample(const LweParams* params);
+void delete_LweSample(LweSample* obj);
+
+TLweSample *new_TLweSample(const TLweParams *params);
+EXPORT void delete_TLweSample(TLweSample *obj);
+#endif
 
 EXPORT void init_LweBootstrappingKey(LweBootstrappingKey *obj, int32_t ks_t, int32_t ks_basebit, const LweParams *in_out_params,
                                      const TGswParams *bk_params) {
@@ -192,15 +202,7 @@ EXPORT void tfhe_bootstrap_woKS(LweSample *result,
 
     //the initial testvec = [mu,mu,mu,...,mu]
     //zpf 这里如果使用testPolynomialGen生成testvect，那么这个函数就必须要传入plaintext_modulus
-    //for (int32_t i = 0; i < N; i++) testvect->coefsT[i] = mu;
-
-    {
-        int32_t plaintext_modulus = 16; //zpf 硬编码
-        for(int i=0; i<N; i++){
-            int32_t polynomial_elem = static_cast<int32_t>(double(i) * plaintext_modulus / (N*2) + 0.5);
-            testvect->coefsT[i] = modSwitchToTorus32(polynomial_elem, plaintext_modulus);
-        }
-    }
+    for (int32_t i = 0; i < N; i++) testvect->coefsT[i] = mu;
 
     tfhe_blindRotateAndExtract(result, testvect, bk->bk, barb, bara, n, bk_params);
 
@@ -232,16 +234,15 @@ EXPORT void tfhe_programmable_bootstrap_woKS(LweSample *result,
     TorusPolynomial *testvect = new_TorusPolynomial(N);
     int32_t *bara = new int32_t[N];
 
-    int32_t barb = modSwitchFromTorus32(x->b, Nx2); //zpf guideToFullyHomomorphicEncryption page31
-                                                    //论文中要求0 <= u < N
-                                                    //而当高位是1的时候就无法满足上述条件，
-                                                    //我们可以将值打印出来看看是否没有被满足
-                                                    //现在我们所有的a其实都被赋值为0，所以b == u
-    cout << "barb: " << barb << " N: " << N << " In function tfhe_programmable_bootstrap_woKS need barb < N assumed a is 0" << endl;
+    int32_t barb = modSwitchFromTorus32(x->b, Nx2);
+    //cout << "barb 有可能变为了负值(in func tfhe_programmable_bootstrap_woKS)： " << barb << endl; //zpf 这个要求是否合理？
+                                                                                                  //确实是这里出错了，为什么会变成负值？因为我对这个函数做了修改强迫当它的值大于N的情况下变为负值，所以这里大概率是用错函数了？
+                                                                                                  //guideToFullyHomomorphicEncryption page31 需要这个断言，大概率是这里我们函数用错了
+
+    assert(barb >=0 && barb < 2 * N); //zpf add
     for (int32_t i = 0; i < n; i++) {
         bara[i] = modSwitchFromTorus32(x->a[i], Nx2);
-        assert(bara[i] == 0);
-        assert(bara[i] >= 0 && bara[i] < Nx2);
+        assert(bara[i] >= 0 && bara[i] < 2 * N);
     }
 
     testPolynomialGenWithPBSTable(testvect, N, truth_table_size, truth_table);
@@ -274,7 +275,6 @@ EXPORT void tfhe_programmable_bootstrap(LweSample *result,
     tfhe_programmable_bootstrap_woKS(u, bk, truth_table, truth_table_size, x);
     // Key Switching
     lweKeySwitch(result, bk->ks, u);
-
     delete_LweSample(u);
 }
 #endif
@@ -321,13 +321,13 @@ EXPORT void tfhe_createLweBootstrappingKey(
 
     //LweKeySwitchKey* ks; ///< the keyswitch key (s'->s)
     const TLweKey *accum_key = &rgsw_key->tlwe_key;
-    LweKey *extracted_key = new_LweKey(extract_params);
+    std::shared_ptr<LweKey> extracted_key = new_LweKey_shared(extract_params);
 
     // Fix me : 把输入的 s' [k][N] 展开成一个 LWE key，长度是 [kxN],放到extracted_key里
     tLweExtractKey(extracted_key, accum_key);
     // Fix me : 用s对s'进行加密，生成ks
-    lweCreateKeySwitchKey(bk->ks, extracted_key, key_in);
-    delete_LweKey(extracted_key);
+    lweCreateKeySwitchKey(bk->ks, extracted_key.get(), key_in);
+    // delete_LweKey(extracted_key);
 
     //TGswSample* bk; ///< the bootstrapping key (s->s")
     int32_t *kin = key_in->key;

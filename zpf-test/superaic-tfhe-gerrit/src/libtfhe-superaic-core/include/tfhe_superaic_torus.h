@@ -1,6 +1,8 @@
 #ifndef _TORUS_H_
 #define _TORUS_H_
 
+#include <memory>
+
 #include <stdint.h>
 #include <stddef.h>
 
@@ -79,6 +81,8 @@ EXPORT Torus32 approxPhase(Torus32 phase, int32_t plaintext_modulus);
  *  
  */
 EXPORT int32_t modSwitchFromTorus32(Torus32 phase, int32_t plaintext_modulus);
+
+EXPORT int32_t modSwitchFromTorus32_old(Torus32 phase, int32_t plaintext_modulus);
 
 /**
  *  converts mu/plaintext_modulus to a Torus32 for mu in [0,plaintext_modulus[

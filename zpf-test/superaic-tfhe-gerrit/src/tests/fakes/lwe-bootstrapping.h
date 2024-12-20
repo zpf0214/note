@@ -1,9 +1,14 @@
 #ifndef FAKE_LWE_BOOTSTRAPPING_H
 #define FAKE_LWE_BOOTSTRAPPING_H
 
+
+
 #include <tfhe.h>
 #include "./lwe-keyswitch.h"
 #include "./tgsw.h"
+
+
+#include "../test_internal.h"
 
 
 namespace {

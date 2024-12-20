@@ -2,7 +2,7 @@
 # 编译
 安装依赖
 ```
-sudo apt install libboost-dev libssl-dev
+sudo apt install libboost-dev libssl-dev qt5*
 ```
 如需要运行mtest，则还需要安装
 ```

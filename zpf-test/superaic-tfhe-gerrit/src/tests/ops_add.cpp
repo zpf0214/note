@@ -2,6 +2,9 @@
 #include <iostream>
 #include <algorithm>
 #include "tfhe.h"
+
+#include "test_internal.h"
+
 #include "fakes/tlwe.h"
 #include "fakes/tgsw.h"
 #include "fakes/lwe-keyswitch.h"
@@ -115,7 +118,7 @@ namespace {
         //13 --> 11
         //14 --> 10
         //15 --> 9
-        //这应该与int 还是 uint相关，即我们实际的取值范围应当是[-7，8]
+        //这应该与int 还是 uint相关，即我们实际的取值范围应当是[-8，7]
         //去负值仍然有同样的问题
         //这里需要好好看看究竟是什么的问题？
         //是bootstrap还是test polynomial的问题，还是符号相关的问题

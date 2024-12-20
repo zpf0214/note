@@ -221,22 +221,32 @@ tLweAddRTTo(TLweSample *result, const int32_t pos, const IntPolynomial *p, const
 }
 
 
-EXPORT void init_TLweKey(TLweKey *obj, const TLweParams *params) {
+void init_TLweKey(TLweKey *obj, const TLweParams *params) {
     new(obj) TLweKey(params);
 }
+
+void init_TLweKey(TLweKey *obj, std::shared_ptr<TLweParams> params) {
+    new(obj) TLweKey(params);
+}
+
+
 EXPORT void destroy_TLweKey(TLweKey *obj) {
     (obj)->~TLweKey();
 }
 
-EXPORT void init_TLweSample(TLweSample *obj, const TLweParams *params) {
+void init_TLweSample(TLweSample *obj, const TLweParams *params) {
     new(obj) TLweSample(params);
 }
+void init_TLweSample(TLweSample *obj, std::shared_ptr<TLweParams> params) {
+    new(obj) TLweSample(params);
+}
+
 EXPORT void destroy_TLweSample(TLweSample *obj) {
     (obj)->~TLweSample();
 }
 
-USE_DEFAULT_CONSTRUCTOR_DESTRUCTOR_IMPLEMENTATIONS1(TLweKey, TLweParams);
-USE_DEFAULT_CONSTRUCTOR_DESTRUCTOR_IMPLEMENTATIONS1(TLweSample, TLweParams);
+//USE_DEFAULT_CONSTRUCTOR_DESTRUCTOR_IMPLEMENTATIONS1(TLweKey, TLweParams);
+//USE_DEFAULT_CONSTRUCTOR_DESTRUCTOR_IMPLEMENTATIONS1(TLweSample, TLweParams);
 
 
 

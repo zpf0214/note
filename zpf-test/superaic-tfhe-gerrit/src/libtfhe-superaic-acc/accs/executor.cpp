@@ -16,8 +16,8 @@ Executor::Executor(Executor_Type type,string name)
 
 
 
-Executor_FPGA::Executor_FPGA(string name):
-    Executor(Executor::Executor_FPGA,name) {
+Executor_FPGA::Executor_FPGA(string name,uint8_t executor):
+    Executor(Executor::Executor_FPGA,name),channel(executor) {
 
 }
 
@@ -48,18 +48,21 @@ shared_ptr<Executor>  Executor_List::aquire_executor(void) {
         }
     }
 
-    // 找不到可用的，那么就等
-    _notFree.wait(lock);
-    
-    // 唤醒以后立刻就持有lock，可以避免其他线程进入临界区
-    for(auto executor : executors) {
-        if ( !executor->busy ) {
-            executor->busy = true;
-            return executor;
+    while(true){
+        // 找不到可用的，那么就等
+        _notFree.wait(lock);
+        
+        // 唤醒以后立刻就持有lock，可以避免其他线程进入临界区
+        for(auto executor : executors) {
+            if ( !executor->busy ) {
+                executor->busy = true;
+                return executor;
 
+            }
         }
-    }
+        //printf("spurious wakeup!!!?\n");
 
+    }
     return nullptr;
   
 }
@@ -67,6 +70,7 @@ shared_ptr<Executor>  Executor_List::aquire_executor(void) {
 void Executor_List::release_executor(shared_ptr<Executor> executor) {
     unique_lock<std::mutex> lock(_executors_mtx);
     executor->busy = false;
+    printf("release %s\n",executor->name.c_str());
     _notFree.notify_one();
 }
 

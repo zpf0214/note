@@ -2,6 +2,7 @@
 #include "lwe-functions.h"
 #include "lwekeyswitch.h"
 // #include "numeric_functions.h"
+#include "test_internal.h"
 
 using namespace std;
 

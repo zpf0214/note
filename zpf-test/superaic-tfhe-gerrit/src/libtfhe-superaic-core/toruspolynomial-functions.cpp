@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cmath>
+#include <iostream>
 #include "tfhe_superaic_torus.h"
 #include "polynomials.h"
 
@@ -142,7 +143,12 @@ EXPORT void torusPolynomialMulByXai(TorusPolynomial *result, int32_t a, const To
     Torus32 *out = result->coefsT;
     Torus32 *in = source->coefsT;
 
-    assert(a >= 0 && a < 2 * N);
+    //assert(a >= 0 && a < 2 * N); //zpf 看样子还是modSwitchToTorus32的问题
+                                 //猜测是a的值超过了2 * N
+                                 //2024年12月16日，测试结果显示果然是超过了2 * N
+    assert(a >= 0 ); //zpf amend
+    //cout << "a = _2N - barb 这个最可能是出错的地方(in func torusPolynomialMulByXai)： " << a << endl; // zpf add
+    assert(a < 2 * N); //zpf amend
     assert(result != source);
 
     if (a < N) {

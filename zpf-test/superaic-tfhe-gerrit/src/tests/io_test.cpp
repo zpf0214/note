@@ -5,6 +5,7 @@
 #include <tfhe_garbage_collector.h>
 #include "polynomials_arithmetic.h"
 #include <tfhe_io.h>
+#include "test_internal.h"
 
 using namespace std;
 

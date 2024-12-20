@@ -1,17 +1,20 @@
 #include <gtest/gtest.h>
 #include "tfhe.h"
+#include "classic_PBS_parameters.h"
+
+#include "test_internal.h"
+
 #include "fakes/tlwe.h"
 #include "fakes/tgsw.h"
 #include "fakes/lwe-keyswitch.h"
 #include "fakes/lwe-bootstrapping.h"
-#include "classic_PBS_parameters.h"
-
 #define TFHE_TEST_ENVIRONMENT 1
 using namespace std;
 
 using namespace ::testing;
 
 namespace {
+
 
     const ClassicPBSParameters M8_PARAM = TEST_PARAM_MESSAGE_8_KS_PBS_GAUSSAIN;
 

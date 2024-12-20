@@ -4,6 +4,7 @@
 #include <tlwe.h>
 #include <tlwe_functions.h>
 #include <tgsw_functions.h>
+#include "test_internal.h"
 
 #define TFHE_TEST_ENVIRONMENT 1
 using namespace std;
@@ -11,6 +12,8 @@ using namespace std;
 using namespace ::testing;
 
 namespace { // namespace
+
+
 
     const int32_t plaintext_modulus = 8;
     const int32_t n = 4;

@@ -9,6 +9,7 @@
 #include "polynomials.h"
 #include "tlwe.h"
 #include "tgsw.h"
+#include "test_internal.h"
 
 using namespace std;
 

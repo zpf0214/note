@@ -13,6 +13,8 @@ struct TGswParams {
     const int32_t Bg;///< decomposition base (must be a power of 2)
     const int32_t halfBg; ///< Bg/2
     const uint32_t maskMod; ///< Bg-1
+    // 必须保证tlwe_params_shared在tlwe_params之前
+    std::shared_ptr<TLweParams> tlwe_params_shared;
     const TLweParams *tlwe_params; ///< Params of each row
     const int32_t kpl; ///< number of rows = (k+1)*l
     Torus32 *h; ///< powers of Bgbit
@@ -21,6 +23,7 @@ struct TGswParams {
     void print(void) const;
 
     TGswParams(int32_t l, int32_t Bgbit, const TLweParams *tlwe_params);
+    TGswParams(int32_t l, int32_t Bgbit, std::shared_ptr<TLweParams> tlwe_params);
 
     ~TGswParams();
 
@@ -33,6 +36,7 @@ struct TGswParams {
 
 
 struct TGswKey {
+    std::shared_ptr <TGswParams> params_shared;
     const TGswParams *params; ///< the parameters
     const TLweParams *tlwe_params; ///< the tlwe params of each rows
     IntPolynomial *key = nullptr; ///< the key (array of k polynomials)
@@ -42,6 +46,7 @@ struct TGswKey {
     void print(void) const;
     
     TGswKey(const TGswParams *params);
+    TGswKey(std::shared_ptr <TGswParams> params);
 
     ~TGswKey();
 
@@ -117,13 +122,17 @@ EXPORT void destroy_TGswKey_array(int32_t nbelts, TGswKey *obj);
 
 //allocates and initialize the TGswKey structure
 //(equivalent of the C++ new)
-EXPORT TGswKey *new_TGswKey(const TGswParams *params);
+//EXPORT TGswKey *new_TGswKey(const TGswParams *params);
 EXPORT TGswKey *new_TGswKey_array(int32_t nbelts, const TGswParams *params);
 
 //destroys and frees the TGswKey structure
 //(equivalent of the C++ delete)
-EXPORT void delete_TGswKey(TGswKey *obj);
+//EXPORT void delete_TGswKey(TGswKey *obj);
 EXPORT void delete_TGswKey_array(int32_t nbelts, TGswKey *obj);
+
+std::shared_ptr<TGswKey> new_TGswKey_shared(const TGswParams * params);
+std::shared_ptr<TGswKey> new_TGswKey_shared(std::shared_ptr<TGswParams>  params);
+
 //allocate memory space for a TGswParams
 EXPORT TGswParams *alloc_TGswParams();
 EXPORT TGswParams *alloc_TGswParams_array(int32_t nbelts);
@@ -144,13 +153,17 @@ EXPORT void destroy_TGswParams_array(int32_t nbelts, TGswParams *obj);
 
 //allocates and initialize the TGswParams structure
 //(equivalent of the C++ new)
-EXPORT TGswParams *new_TGswParams(int32_t l, int32_t Bgbit, const TLweParams *tlwe_params);
+//EXPORT TGswParams *new_TGswParams(int32_t l, int32_t Bgbit, const TLweParams *tlwe_params);
 EXPORT TGswParams *new_TGswParams_array(int32_t nbelts, int32_t l, int32_t Bgbit, const TLweParams *tlwe_params);
 
 //destroys and frees the TGswParams structure
 //(equivalent of the C++ delete)
-EXPORT void delete_TGswParams(TGswParams *obj);
+//EXPORT void delete_TGswParams(TGswParams *obj);
 EXPORT void delete_TGswParams_array(int32_t nbelts, TGswParams *obj);
+
+std::shared_ptr<TGswParams> new_TGswParams_shared(int32_t l, int32_t Bgbit, const TLweParams *tlwe_params);
+std::shared_ptr<TGswParams> new_TGswParams_shared(int32_t l, int32_t Bgbit, std::shared_ptr<TLweParams> tlwe_params);
+
 //allocate memory space for a TGswSample
 EXPORT TGswSample *alloc_TGswSample();
 EXPORT TGswSample *alloc_TGswSample_array(int32_t nbelts);
@@ -161,7 +174,8 @@ EXPORT void free_TGswSample_array(int32_t nbelts, TGswSample *ptr);
 
 //initialize the TGswSample structure
 //(equivalent of the C++ constructor)
-EXPORT void init_TGswSample(TGswSample *obj, const TGswParams *params);
+void init_TGswSample(TGswSample *obj, const TGswParams *params);
+void init_TGswSample(TGswSample *obj, std::shared_ptr<TGswParams> params);
 EXPORT void init_TGswSample_array(int32_t nbelts, TGswSample *obj, const TGswParams *params);
 
 //destroys the TGswSample structure
@@ -171,13 +185,16 @@ EXPORT void destroy_TGswSample_array(int32_t nbelts, TGswSample *obj);
 
 //allocates and initialize the TGswSample structure
 //(equivalent of the C++ new)
-EXPORT TGswSample *new_TGswSample(const TGswParams *params);
+//EXPORT TGswSample *new_TGswSample(const TGswParams *params);
 EXPORT TGswSample *new_TGswSample_array(int32_t nbelts, const TGswParams *params);
 
 //destroys and frees the TGswSample structure
 //(equivalent of the C++ delete)
-EXPORT void delete_TGswSample(TGswSample *obj);
+//EXPORT void delete_TGswSample(TGswSample *obj);
 EXPORT void delete_TGswSample_array(int32_t nbelts, TGswSample *obj);
+
+std::shared_ptr<TGswSample> new_TLweSample_shared(const TGswParams* params) ;
+std::shared_ptr<TGswSample> new_TLweSample_shared(std::shared_ptr<TGswParams> params);
 
 //allocate memory space for a TGswSampleFFT
 EXPORT TGswSampleFFT *alloc_TGswSampleFFT();

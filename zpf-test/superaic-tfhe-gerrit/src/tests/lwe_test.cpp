@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <lwe-functions.h>
 //#include <numeric_functions.h>
-
+#include "test_internal.h"
 using namespace std;
 
 namespace {
@@ -302,6 +302,13 @@ namespace {
             delete_LweSample(b);
             delete_LweSample(acopy);
         }
+    }
+
+    TEST_F(LweTest, lwe_shared_pointer) {
+        shared_ptr<LweParams> p_LweParams = new_LweParams_shared(500, plaintext_modulus, 0., 1.);
+        shared_ptr<LweKey> p_Key = new_LweKey_shared(p_LweParams);
+        shared_ptr<LweSample> p_LweSample = new_LweSample_shared(p_LweParams.get());
+        shared_ptr<LweSample> p_LweSample2 = new_LweSample_shared(p_LweParams);
     }
 
 #if 0

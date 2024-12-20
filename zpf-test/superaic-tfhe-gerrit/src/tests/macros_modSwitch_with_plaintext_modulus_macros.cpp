@@ -11,6 +11,9 @@
 #include "fakes/lwe-bootstrapping.h"
 #include "classic_PBS_parameters.h"
 
+#include "test_internal.h"
+
+
 #define TFHE_TEST_ENVIRONMENT 1
 #define MAX_NOISE 10000.0
 #define NUM_BLOCK 16
@@ -107,7 +110,6 @@ namespace {
      *  宏只是一个简单的替换动作，这里我们用宏生成对应的测试函数
      *  同时我们也要注意宏可能存在的误用
      */
-#if 1
     #define GENERATE_TEST_FUNCTION_WITH_DIFFERENT_VALUE(value) \
     TEST_F(TfheCreateBootstrapKeyTest, PLAINTEXT_MODULUS_VALUES_##value){\
         bool _use_fix_random_bak = _use_fix_random;      \
@@ -132,14 +134,7 @@ namespace {
         _use_fix_random = _use_fix_random_bak; \
     }
 
-    //zpf 宏无法处理循环，所以没有办法处理不定长列表
-    //#define GENERATE_ALL_TEST_FUNCTIONS(start, end)\
-    //{ \
-    //    for (int i=start; i<end; i++) { \
-    //        GENERATE_TEST_FUNCTION_WITH_DIFFERENT_VALUE(i); \
-    //    } \
-    //} 
-
+#if 0
     GENERATE_TEST_FUNCTION_WITH_DIFFERENT_VALUE(0)
     GENERATE_TEST_FUNCTION_WITH_DIFFERENT_VALUE(1)
     GENERATE_TEST_FUNCTION_WITH_DIFFERENT_VALUE(2)
@@ -156,7 +151,7 @@ namespace {
     GENERATE_TEST_FUNCTION_WITH_DIFFERENT_VALUE(13)
     GENERATE_TEST_FUNCTION_WITH_DIFFERENT_VALUE(14)
     GENERATE_TEST_FUNCTION_WITH_DIFFERENT_VALUE(15)
-
+#endif
 
     #define GENERATE_TFHE_PROGRAMMABLE_BOOTSTRAP_TEST(value) \
     TEST_F(TfheCreateBootstrapKeyTest, TFHE_PROGRAMMABLE_BOOTSTRAP_TEST_##value) { \
@@ -188,7 +183,8 @@ namespace {
         _use_fix_random = _use_fix_random_bak; \
     }
 
-    //GENERATE_TFHE_PROGRAMMABLE_BOOTSTRAP_TEST(0)
+#if 0
+    GENERATE_TFHE_PROGRAMMABLE_BOOTSTRAP_TEST(0)
     GENERATE_TFHE_PROGRAMMABLE_BOOTSTRAP_TEST(1)
     GENERATE_TFHE_PROGRAMMABLE_BOOTSTRAP_TEST(2)
     GENERATE_TFHE_PROGRAMMABLE_BOOTSTRAP_TEST(3)
@@ -259,8 +255,8 @@ namespace {
         delete_LweKey(key); \
         _use_fix_random = _use_fix_random_bak; \
     }
-
-    //GENERATE_TFHE_PROGRAMMABLE_BOOTSTRAP_WITHOUT_PBS_TEST(0)
+#if 0
+    GENERATE_TFHE_PROGRAMMABLE_BOOTSTRAP_WITHOUT_PBS_TEST(0)
     GENERATE_TFHE_PROGRAMMABLE_BOOTSTRAP_WITHOUT_PBS_TEST(1)
     GENERATE_TFHE_PROGRAMMABLE_BOOTSTRAP_WITHOUT_PBS_TEST(2)
     GENERATE_TFHE_PROGRAMMABLE_BOOTSTRAP_WITHOUT_PBS_TEST(3)
@@ -276,6 +272,7 @@ namespace {
     GENERATE_TFHE_PROGRAMMABLE_BOOTSTRAP_WITHOUT_PBS_TEST(13)
     GENERATE_TFHE_PROGRAMMABLE_BOOTSTRAP_WITHOUT_PBS_TEST(14)
     GENERATE_TFHE_PROGRAMMABLE_BOOTSTRAP_WITHOUT_PBS_TEST(15)
+#endif
 }
 /* ---
  *

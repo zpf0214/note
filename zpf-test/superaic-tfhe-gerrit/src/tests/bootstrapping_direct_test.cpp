@@ -1,10 +1,12 @@
 #include <gtest/gtest.h>
 #include "tfhe.h"
+
+#include "test_internal.h"
+
 #include "fakes/tlwe.h"
 #include "fakes/tgsw.h"
 #include "fakes/lwe-keyswitch.h"
 #include "fakes/lwe-bootstrapping.h"
-
 #define TFHE_TEST_ENVIRONMENT 1
 using namespace std;
 

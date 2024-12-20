@@ -2,6 +2,9 @@
 #include <iostream>
 #include <algorithm>
 #include "tfhe.h"
+
+#include "test_internal.h"
+
 #include "fakes/tlwe.h"
 #include "fakes/tgsw.h"
 #include "fakes/lwe-keyswitch.h"

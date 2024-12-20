@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "tfhe_superaic_torus.h"
-
+#include "test_internal.h"
 TEST(ArithmeticTest, doubleToTorus32) 
 {
     EXPECT_EQ(0x80000000,dtot32(0.5));

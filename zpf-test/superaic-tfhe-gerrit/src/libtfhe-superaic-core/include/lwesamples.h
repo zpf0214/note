@@ -15,6 +15,7 @@ struct LweSample {
 #ifdef __cplusplus
    void print();
    LweSample(const LweParams* params);
+   LweSample(const std::shared_ptr<LweParams> params);
    ~LweSample();
    LweSample(const LweSample&)=delete;
    LweSample& operator=(const LweSample&)=delete;
@@ -46,7 +47,8 @@ EXPORT void free_LweSample_array(int32_t nbelts, LweSample* ptr);
  * @param ptr the pointer to the first element
  * @param params the LWE parameters to use
  */
-EXPORT void init_LweSample(LweSample* ptr, const LweParams* params);
+void init_LweSample(LweSample* ptr, const LweParams* params);
+void init_LweSample(LweSample* ptr, const std::shared_ptr<LweParams> params);
 
 /** initializes (constructor) an array of LweSamples on an already allocated space 
  * @param nbelts the number of elements to initialize 
@@ -69,7 +71,7 @@ EXPORT void destroy_LweSample_array(int32_t nbelts, LweSample* ptr);
 /** allocates and initializes (constructor) a single LweSample 
  * @param params the LWE parameters to use
  */
-EXPORT LweSample* new_LweSample(const LweParams* params);
+//EXPORT LweSample* new_LweSample(const LweParams* params);
 /** allocates and initializes (constructor) a single LweSample 
  * @param nbelts the number of consecutive elements to create 
  * @param params the LWE parameters to use
@@ -78,11 +80,14 @@ EXPORT LweSample* new_LweSample_array(int32_t nbelts, const LweParams* params);
 
 /** destroy and frees memory space for a single LweSample 
  * @param ptr the pointer to release */
-EXPORT void delete_LweSample(LweSample* obj);
+//EXPORT void delete_LweSample(LweSample* obj);
 /** destroys and free memory space for an array of LweSample 
  * @param nbelts the number of elements 
  * @param ptr the pointer to release */
 EXPORT void delete_LweSample_array(int32_t nbelts, LweSample* obj);
 
+
+std::shared_ptr<LweSample> new_LweSample_shared(const LweParams* params);
+std::shared_ptr<LweSample> new_LweSample_shared(const std::shared_ptr<LweParams> params);
 #endif //LWESAMPLES_H
 

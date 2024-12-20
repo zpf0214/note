@@ -3,10 +3,11 @@
 #include "tfhe_package.h"
 
 #include "tfhe_superaic_server.h"
-
+#include "test_internal.h"
 using namespace std;
 using namespace tfhe_superaic;
 namespace {
+
 
     const int32_t plaintext_modulus = 8;
     const LweParams* lweparams500 = new_LweParams(500, plaintext_modulus,0.1,0.3);
@@ -279,6 +280,17 @@ namespace {
         _use_fix_random = _use_fix_random_bak;
     }
 
+    TEST_F(ACCTest, get_valid_acc_test){
+        std::shared_ptr<TFHE_ACC> acc = TFHE_ACC::get_valid_acc();
+        std::shared_ptr<CPU_ACC> cpu = std::dynamic_pointer_cast<CPU_ACC>(acc);
+        std::shared_ptr<FPGA_ACC_V0> fpga = std::dynamic_pointer_cast<FPGA_ACC_V0>(acc);
+        if(cpu) {
+            printf("dynamic_pointer_cast to CPU ok\n");
+        }
+        if(fpga) {
+            printf("dynamic_pointer_cast to FPGA ok\n");
+        }
 
-
+        ASSERT_TRUE(cpu || fpga);
+    }
 }
