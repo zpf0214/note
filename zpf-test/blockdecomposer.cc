@@ -6,53 +6,50 @@
 
 using namespace std;
 
+void block_decomposer(int32_t *result, int32_t message, const int32_t message_modulu, const int32_t num_block){
+    int32_t message_bits = log2(message_modulu);
+    for(int i=0; i<num_block; i++){
+        result[i] = (message >> (i * message_bits)) & (message_modulu - 1); 
+    }
+}
+
+//TODO zpf 这样恢复对于负值要如何处理？
+//位操作决定了log(message_modulu) * num_block == log(int32_t)
+int32_t block_recomposer(const int32_t *plaintext_block, const int32_t message_modulu, const int32_t num_block){
+    int32_t message = 0;
+    int32_t message_bits = log2(message_modulu);
+    for(int i=0; i<num_block; i++){
+        message |= static_cast<int32_t>(plaintext_block[i]) << (i * message_bits);
+    }
+    return message;
+
+}
+
+
 int main() {
-    int32_t value = 23;
-    std::array<int32_t, 16> bits;
-
-    for (int i = 0; i < 16; ++i) {
-        // Extract the 2-bit chunk from the current position
-        bits[i] = (value >> (i * 2)) & 3;
+    const int32_t num_block = 16;
+    const int32_t message_modulu = 4;
+    int32_t plaintext_block[num_block];
+    for(int i=0; i<num_block; i++){
+        plaintext_block[i] = 1;
     }
 
-    // Print the result in reverse order to show the most significant chunks first
-    for (int i = 0; i < 16; i++) {
-        //std::cout << "Chunk " << 15 - i << ": " 
-        //          << std::bitset<2>(bits[i]) << " (decimal: " 
-        //          << static_cast<int>(bits[i]) << ")\n";
-        std::cout << bits[i] << ", ";
-    }
-    std::cout << std::endl;
+    auto x = block_recomposer(plaintext_block, message_modulu, num_block);
 
-    // recompose
-    //bits[0] -= 23; // 可以正确的执行加法
-                   // 如果是减法还可以正常执行吗？
+    cout << x << endl;
 
-    for(int i=0; i<16; i++){
-        bits[i] += bits[i];
-    }
-    //处理进位
-    int32_t carry = 0;
-    for(int i=0; i<16; i++){
-        bits[i] += carry;
-        carry = bits[i] / 4;
-        bits[i] = bits[i] % 4;
-    }
-    int32_t result = 0;
-    for(int i=0; i<16; i++){
-        cout << bits[i] << ", ";
-        result |= static_cast<int32_t>(bits[i]) << (i * 2);
-    }
-    std::cout << std::endl;
+    int32_t result[num_block];
+    block_decomposer(result, x, message_modulu, num_block);
 
-    std::cout << result << std::endl;
-    
-    auto ans = static_cast<int64_t>(value); //不是直接填充，而是会根据最高位进行填充
-    cout << ans << endl;
-
-    int ilog = 8;
-    auto ilogr = log2(ilog);
-    std::cout << ilogr << std::endl;
+    {
+        for(int i=0; i<num_block; i++){
+            cout << "plaintext_block[" << i << "] = " 
+                << plaintext_block[i];
+            cout << " result[" << i << "] = " 
+                << result[i];
+            cout << endl;
+        }
+    }
 
     return 0;
 }
