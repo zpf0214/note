@@ -1,0 +1,7 @@
+shared_ptr.cc: In function ‘int main()’:
+shared_ptr.cc:25:21: warning: capture of variable ‘VAL’ with non-automatic storage duration
+   25 |     auto deleter = [VAL](LweSample** p) {
+      |                     ^~~
+shared_ptr.cc:13:11: note: ‘const int VAL’ declared here
+   13 | const int VAL = 10;
+      |           ^~~
