@@ -29,6 +29,7 @@ int main()
 
     // 定义一个lambda表达式作为删除器，并捕获VAL
     auto deleter = [=](LweSample** p) {
+        std::cout << "deleter start ";
         for (int i = 0; i < VAL; ++i) {
             delete p[i]; // 删除每个 LweSample 对象
         }
@@ -39,30 +40,22 @@ int main()
     std::shared_ptr<LweSample*[]> smartA(a, deleter);
     a = nullptr;
     
-    // 使用智能指针管理每个 LweSample 对象
-    for (int i = 0; i < VAL; ++i) {
-        // 如果 LweSample 支持拷贝构造，则可以创建副本
-//        smartA.get()[i] = new LweSample(*a[i]);
-        // 或者如果你想要转移所有权而不是复制对象
-        // std::shared_ptr<LweSample> sp(a[i]);
-        // smartA.get()[i] = sp.get();
-        // 这样做之后，你应该不再使用原始指针 a[i]
-    }
-    
-    // 现在你可以安全地释放原始指针数组 'a'，因为所有权已经被转移给 smartA
-    // 注意：这里我们不需要再手动 delete[] a，因为 smartA 会负责清理
-    
-    // 智能指针会在其生命周期结束时自动调用删除器
-
     a = smartA.get();
+    smartA.reset();
     std::swap(a, b);
-
-    //deleter(b);
-    {
-        for(int i=0; i<VAL; i++){
-            delete b[i];
-        }
-        delete[] b;
+    //
+    for(int i=0; i<VAL; ++i){
+    //    std::swap(a[i], b[i]);
     }
+
+    deleter(b);
+    deleter(a);
+    //{
+    //    for(int i=0; i<VAL; i++){
+    //        delete b[i];
+    //    }
+    //    delete[] b;
+    //}
+    //smartA.reset(a);
 
 }

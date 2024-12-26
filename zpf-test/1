@@ -1,7 +1,65 @@
-shared_ptr.cc: In function ‘int main()’:
-shared_ptr.cc:25:21: warning: capture of variable ‘VAL’ with non-automatic storage duration
-   25 |     auto deleter = [VAL](LweSample** p) {
-      |                     ^~~
-shared_ptr.cc:13:11: note: ‘const int VAL’ declared here
-   13 | const int VAL = 10;
-      |           ^~~
+LweSample constructed : 1
+LweSample constructed : 2
+LweSample constructed : 3
+LweSample constructed : 4
+LweSample constructed : 5
+LweSample constructed : 6
+LweSample constructed : 7
+LweSample constructed : 8
+LweSample constructed : 9
+LweSample constructed : 10
+Initial values:
+array1[0] = 1
+array1[1] = 2
+array1[2] = 3
+array1[3] = 4
+array1[4] = 5
+array1[5] = 6
+array1[6] = 7
+array1[7] = 8
+array1[8] = 9
+array1[9] = 10
+a has been set to nullptr
+Copied values:
+array2[0] = 1
+array2[1] = 2
+array2[2] = 3
+array2[3] = 4
+array2[4] = 5
+array2[5] = 6
+array2[6] = 7
+array2[7] = 8
+array2[8] = 9
+array2[9] = 10
+Moved values:
+array3[0] = 1
+array3[1] = 2
+array3[2] = 3
+array3[3] = 4
+array3[4] = 5
+array3[5] = 6
+array3[6] = 7
+array3[7] = 8
+array3[8] = 9
+array3[9] = 10
+array1 size after move: 0
+LweSample destructed : 1
+LweSample destructed : 2
+LweSample destructed : 3
+LweSample destructed : 4
+LweSample destructed : 5
+LweSample destructed : 6
+LweSample destructed : 7
+LweSample destructed : 8
+LweSample destructed : 9
+LweSample destructed : 10
+LweSample destructed : 1
+LweSample destructed : 2
+LweSample destructed : 3
+LweSample destructed : 4
+LweSample destructed : 5
+LweSample destructed : 6
+LweSample destructed : 7
+LweSample destructed : 8
+LweSample destructed : 9
+LweSample destructed : 10
