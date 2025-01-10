@@ -151,6 +151,25 @@ v(X) &=  \frac{1}{4}X^3 + \frac{1}{4}X^4 + \frac{1}{4}X^5 + \frac{1}{4}X^6 + \fr
 
 我们可以看到，`Rescaling`操作是如何引入新的误差的。
 
+#### Example2
+
+当\(u = 0\)时，我们有：
+\[\begin{aligned}
+-\tilde{u}^* &= 15 - \lfloor 16e \rceil \ mod \ 2N  \\
+&=\{0, 1, 14, 15\}
+\end{aligned}\]
+我们发现当\(-\tilde{u}^* = 1\)时，常数项系数为：
+\[\begin{aligned}
+X^1 \times v(x) &= -\frac{2}{4} + \cdots \neq  0 + \cdots
+\end{aligned}\]
+
+从这里我们可以看出，当$u=0$时，即使误差在可接受的范围值内，也不能保证被正确的计算出。
+
+这主要是因为`test polynomial`只能表示\(\mathbb{T}_p[X]\)中一半的元素。
+那么0以及\(\frac{2}{4}\)都存在半个误差区间无法被正确计算的情况。
+
+这也是为什么我们做bootstrap的时候0偶尔会出错的原因。
+
 ## BlindRotate
 
 我们有如下定义：
