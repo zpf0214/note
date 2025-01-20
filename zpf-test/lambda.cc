@@ -10,7 +10,8 @@ class Work {
     public:
         Work():value(42){}
         std::future<int>spawn(){
-            return std::async([=, tmp = this]()->int {return tmp->value;});
+            return std::async([=, *this]()->int {return value;});
+            //return std::async([=, tmp = this]()->int {return tmp->value;});
             //return std::async([=, tmp = *this]()->int {return tmp->value;});
         }
 };
