@@ -1,31 +1,19 @@
 cmake_minimum_required(VERSION 3.20)
 project(myProgram)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-#add_library(message
-#    STATIC
-#        Message.hpp
-#        Message.cpp
-#)
+#set(USE_LIBRARY OFF)
+option(USE_LIBRARY "Compile source into a library" OFF)
 
-add_library(message-objs
-    OBJECT
-        Message.hpp
-        Message.cpp
-)
+message(status "Compile source into a library? ${USE_LIBRARY}")
 
-add_library( message-shared
-    SHARED
-        $<TARGET_OBJECTS:message-objs>
-)
+set(BUILD_SHARED_LIBS OFF)
 
-add_library( message-static
-    STATIC 
-        $<TARGET_OBJECTS:message-objs>
-)
+list(APPEND _sources Message.hpp Message.cpp)
 
+if(USE_LIBRARY)
+    add_library(message ${_sources})
+    add_executable(hello-world hello-world.cpp)
+    target_link_libraries(hello-world message)
+else()
+    add_executable(hello-world hello-world.cpp ${_sources})
+endif()
 
-
-
-
-add_executable(myProgram hello-world.cpp)
-target_link_libraries(myProgram message-static)
